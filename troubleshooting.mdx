@@ -1,0 +1,51 @@
+---
+title: "Troubleshooting"
+description: "Blank widget, missing discount, and common Knit errors"
+---
+
+Use this page when the widget is missing, add-to-cart fails, or checkout does not show the bundle discount. For Tapcart-only steps see [Tapcart](/tapcart).
+
+## Checklist
+
+1. Knit is installed and has been **opened once** in Shopify admin.
+2. The bundle is **Active** and includes the product you are testing.
+3. In Shopify admin → **Discounts**, the Knit automatic discount is **Active**.
+4. You are testing a product that actually belongs to that bundle (product match or collection membership).
+5. You waited up to **5 minutes** after the last bundle edit (cache).
+
+## Widget does not appear
+
+| Symptom | Likely cause | What to do |
+| --- | --- | --- |
+| Blank on a Liquid product page | Theme app extension not enabled, or product not in an active bundle | Enable the app embed in the theme editor. Confirm the bundle is Active and includes this product. |
+| Blank iframe (headless / Tapcart) | Wrong `shop` domain, or embed origin blocked | Use `{store}.myshopify.com`. If the console says refused to connect, the host must allow `https://app.knit-bundle.co`. |
+| "No bundle" / empty widget | No matching active bundle | Add the product (or its collection) to an Active bundle. |
+| Headless JSON `APP_NOT_INSTALLED` | Storefront token not provisioned | Open Knit once in Shopify admin, then retry. |
+| Headless JSON `INVALID_PARAMS` | Missing or invalid `shop` | Pass `shop=your-store.myshopify.com`. |
+| Headless JSON `NOT_FOUND` | Headless not enabled on this deployment | Contact Knit support. |
+| Stale products or old tiers | Cache | Wait up to 5 minutes, then reload. |
+
+## Add to cart fails
+
+- On Liquid: confirm the theme is not intercepting the widget button, and that ATC override is only on if you intend the theme button to add the bundle. See [Shopify integration](/shopify-integration).
+- On headless: you must handle `addToCart` over `postMessage` and reply with `addToCartResult` within about 10 seconds, or the widget shows `CART_TIMEOUT`. See [Headless Bundles API](/headless-bundles-api#postmessage-bridge).
+- On Tapcart: publish the app after adding the block, then test on a device, not only the static canvas.
+
+## Discount missing at checkout
+
+Items can land in the cart at full price when `__FB_ATC_UID` never reaches Shopify.
+
+1. Confirm the Knit automatic discount is **Active**.
+2. Confirm the bundle is **Active**.
+3. Inspect the cart or order: each bundle line must show `__FB_ATC_UID` as a line-item property.
+4. If a cart app, Hydrogen cart, or middleware strips custom properties, keep this one. See [How discounts apply](/how-discounts-apply).
+
+## What to send support
+
+Include:
+
+- Shopify domain (`your-store.myshopify.com`)
+- Product handle or ID
+- Endpoint URL or page URL
+- Full JSON error (`{ ok: false, code, message }`) or `[nameless]` / `[knit-bundle]` console logs
+- Screenshot or recording (storefront, Tapcart preview, or device)

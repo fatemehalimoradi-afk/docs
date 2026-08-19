@@ -1,0 +1,28 @@
+---
+title: "Shopify integration"
+description: "How Knit runs on a Shopify Liquid storefront"
+---
+
+On a standard Shopify Liquid theme, Knit uses three pieces:
+
+| Piece | Role |
+| --- | --- |
+| Theme app extension | Renders the bundle widget on matching product pages |
+| Cart line-item properties | Carries `__FB_ATC_UID` so lines stay grouped |
+| Discount Function | Applies the bundle reward at checkout |
+
+Enable the Knit app embed in the theme editor so the widget can mount. You do **not** need the theme app extension for [headless endpoints](/headless-bundles-api) or [Tapcart](/tapcart). Those load from the Knit app origin:
+
+```
+https://app.knit-bundle.co
+```
+
+## Add to cart override
+
+If a bundle has **ATC override** enabled, the shopper clicks the theme's Add to Cart button and Knit adds the bundle lines instead of a single product. The widget should not show its own add-to-cart button in that mode.
+
+If override is off, the widget shows its own add-to-cart control.
+
+## Checkout
+
+The discount still comes from the Knit automatic discount in Shopify admin → **Discounts**. Details: [How discounts apply](/how-discounts-apply).

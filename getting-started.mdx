@@ -1,0 +1,42 @@
+---
+title: "Getting started"
+description: "Install Knit Bundles and publish your first bundle"
+---
+
+This page gets a standard Shopify Liquid storefront live. For Tapcart see [Tapcart](/tapcart). For Hydrogen or a custom cart see the [Headless Bundles API](/headless-bundles-api).
+
+## Prerequisites
+
+- A Shopify store
+- Permission to install apps
+
+## Install
+
+1. Install **Knit Bundles** from the Shopify App Store.
+2. Open the app from **Apps** in Shopify admin. Opening it once provisions the Storefront access token that headless endpoints need.
+3. Create a bundle: add products or collections, set quantity tiers and discounts, then set the bundle to **Active** and save. See [Create a bundle](/create-a-bundle).
+
+<Tip>
+  Headless endpoints return `APP_NOT_INSTALLED` until the app has been opened at least once in Shopify admin.
+</Tip>
+
+## Confirm the automatic discount
+
+1. In Shopify admin go to **Discounts**.
+2. Find the Knit automatic discount and confirm it is **Active**.
+
+Without this, the widget can still add items to the cart, but checkout will not apply the bundle price. See [How discounts apply](/how-discounts-apply).
+
+## Confirm the product page
+
+1. Open an online store product that belongs to the active bundle.
+2. The Knit widget should render on the product page (theme app extension).
+3. Add the bundle to cart and start checkout. The bundle discount should appear.
+
+If the widget is missing or the discount is not on the order, see [Troubleshooting](/troubleshooting).
+
+## Next
+
+- [Bundle concepts](/bundle-concepts) — selectors, conditions, and rewards
+- [Tapcart](/tapcart) — same bundles in a Tapcart app
+- [Headless Bundles API](/headless-bundles-api) — iframe embed or data API

@@ -1,0 +1,98 @@
+---
+title: "Tapcart"
+description: "Add the Knit bundle widget to a Tapcart product page"
+---
+
+This guide is for Tapcart App Studio. You do not need to write code or use the Tapcart CLI. Knit prepares and publishes the block; you add it to the product page and publish.
+
+Knit bundles on Tapcart use the **same active bundles** as your Shopify store. Add to cart goes to **Tapcart's native cart**. The discount still applies in Shopify checkout. See [How discounts apply](/how-discounts-apply).
+
+```
+Your Tapcart app
+  └─ Product page
+       └─ Knit Bundle block
+            └─ Bundle widget
+                 Shopper selects options and taps Add to Cart
+            Tapcart adds the lines (with discount info attached)
+```
+
+## What Knit sets up
+
+Before you start, Knit will have:
+
+1. Enabled bundle data for your store
+2. Published the **Knit Bundle** block to your Tapcart app (App Studio → **My Blocks**)
+3. Pre-configured the block so it points at your store — you normally do not set URLs
+
+If any of these are missing, contact your Knit account manager.
+
+## Prerequisites
+
+- Knit app installed on the Shopify store
+- At least one **Active** bundle in Knit admin
+- Tapcart **Enterprise** with App Studio access (required for custom blocks)
+- Access to [Tapcart App Studio](https://studio.tapcart.com)
+
+## Add the block
+
+<Steps>
+  <Step title="Confirm the block">
+    Open App Studio, select your app, go to **Screens → My Blocks**, and confirm **Knit Bundle** is listed. If it is not, Knit has not published it yet.
+  </Step>
+  <Step title="Place it on the product page">
+    Open the **Product Detail Page** template. Click **Add Block**, choose **Knit Bundle**, and drag it where the widget should appear — typically below product details or above the native Add to Cart button.
+  </Step>
+  <Step title="Optional settings">
+    In most cases leave the right-hand panel as Knit pre-filled it. You do not set a product ID; Tapcart supplies the current product.
+
+    | Setting | Description |
+    | --- | --- |
+    | Embed base URL | **Leave blank.** Only set this if Knit support asks you to. |
+    | Bundle handle | Show one specific bundle. Blank = whatever matches the product. |
+    | Bundle type | Filter to one bundle type. Blank = no filter. |
+    | Initial height | Placeholder height (px) for the **static App Studio canvas only**. On device the widget sizes to content. Default `600`. |
+  </Step>
+  <Step title="Save and publish">
+    Save the screen, then **Publish** the app (or push a preview build).
+  </Step>
+</Steps>
+
+<Warning>
+  If **Embed base URL** is set to the wrong value, the widget stays blank. Clear the field to use automatic store resolution.
+</Warning>
+
+## Verify
+
+App Studio has two previews, and they are not the same:
+
+- **The canvas** (drag-and-drop layout) is static. The widget uses a **fixed placeholder height**. You may see a caption like _"Bundle preview — sizes to content on device."_ That is expected.
+- **"Preview your app"** and the **installed app** run the widget for real. It auto-sizes, including when a product has more than one bundle.
+
+Always verify in **Preview your app** or on a device.
+
+1. Open a product that has an **Active** Knit bundle.
+2. The widget should appear, sized to its content.
+3. Select options and tap the bundle **Add to Cart** button.
+4. Tapcart cart should show every bundle line.
+
+Then complete a test order and confirm `__FB_ATC_UID` on the Shopify order lines. See [How discounts apply](/how-discounts-apply).
+
+## Troubleshooting
+
+| Symptom | Likely cause | What to do |
+| --- | --- | --- |
+| Blank space | Endpoint not enabled, or block not pointing at the store | Contact Knit support |
+| Console: refused to connect | Tapcart WebView blocking the widget origin | Contact Knit support (Tapcart allowlist) |
+| Widget says no bundle | No active bundle matches this product | In Knit admin, include this product and set the bundle **Active** |
+| Knit Bundle not in My Blocks | Block not published to this app | Contact your Knit account manager |
+| Items in cart, no discount | Knit automatic discount inactive, or property stripped | Confirm **Discounts** is Active; see [Troubleshooting](/troubleshooting) |
+
+Bundle changes in Knit admin can take up to **5 minutes** to show in the app.
+
+<Note>
+  Placement is product page only in this version. The block does not replace Tapcart's native Add to Cart button. Your Shopify web storefront is unchanged.
+</Note>
+
+## CLI (optional)
+
+If your team has Tapcart Enterprise CLI access and wants to host the block in your own repo, ask Knit for the block project. Most merchants do not need this — Knit publishes the block for you.

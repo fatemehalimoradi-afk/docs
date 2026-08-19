@@ -1,0 +1,27 @@
+---
+title: "Bundle concepts"
+description: "How Knit models products, conditions, and rewards"
+---
+
+A Knit bundle is a merchandising offer: which products participate, when the offer applies, and what discount the shopper gets.
+
+## Selectors
+
+Selectors decide which products are in the bundle.
+
+| Kind | Meaning |
+| --- | --- |
+| Product | One specific product |
+| Collection | Products from a collection (single or multi) |
+
+## Conditions and rewards
+
+- A **condition** is the rule the shopper must meet (for example, quantity 2).
+- A **reward** is what they get when the condition is met (for example, 19% off).
+- Conditions and rewards are grouped in **condition sets**. Each set is one tier, such as "Buy 2, save 19%".
+
+Knit does not send a precomputed bundle price. The widget (or your headless UI) maps condition sets to tiers, and a Shopify Discount Function applies the reward at checkout.
+
+## Bundle state
+
+Only **active** bundles are returned by the storefront and headless APIs.

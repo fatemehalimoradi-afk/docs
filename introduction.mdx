@@ -1,0 +1,31 @@
+---
+title: "Introduction"
+description: "What Knit Bundles is and which guide to follow"
+---
+
+Knit Bundles is a Shopify app for product bundles, volume discounts, and mix-and-match offers. You create the offer in Shopify admin. Shoppers see it on the product page. The discount is applied at Shopify checkout.
+
+How you **render** the widget depends on the storefront:
+
+| Storefront | What you use |
+| --- | --- |
+| Shopify Liquid theme | Theme app extension (installed with the app) |
+| Tapcart mobile app | Knit Bundle block in App Studio |
+| Hydrogen, custom cart, or other headless host | [Headless Bundles API](/headless-bundles-api) |
+
+All three use the **same bundles** from Knit admin and the **same checkout discount**.
+
+<CardGroup cols={2}>
+  <Card title="Getting started" icon="rocket" href="/getting-started">
+    Install the app, create an active bundle, confirm it on the product page.
+  </Card>
+  <Card title="How discounts apply" icon="percent" href="/how-discounts-apply">
+    Why cart lines must keep `__FB_ATC_UID` for the discount to fire.
+  </Card>
+  <Card title="Tapcart" icon="mobile" href="/tapcart">
+    Add the Knit Bundle block to your Tapcart product page.
+  </Card>
+  <Card title="Headless Bundles API" icon="code" href="/headless-bundles-api">
+    Embed the widget or consume the data API from any host.
+  </Card>
+</CardGroup>
