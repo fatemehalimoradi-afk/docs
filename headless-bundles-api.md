@@ -33,7 +33,9 @@ target store with a `shop` query parameter:
 
 ## Prerequisites
 
-1. Install the **Knit Bundles** app on your Shopify store.
+1. Install the app from the Shopify App Store listing
+   [https://apps.shopify.com/knit-bundles](https://apps.shopify.com/knit-bundles)
+   (listed as **Knit Bundle Engine**). Do not search the App Store by name.
 2. Configure **at least one active bundle**.
 3. Open the app once in the Shopify admin — this provisions the Storefront
    access token the headless endpoints need. (Until this happens, the endpoints

@@ -23,7 +23,13 @@
           "bundle-concepts",
           "create-a-bundle",
           "shopify-integration",
-          "how-discounts-apply",
+          "how-discounts-apply"
+        ]
+      },
+      {
+        "group": "Integrations",
+        "pages": [
+          "integrations",
           "tapcart"
         ]
       },
@@ -36,6 +42,7 @@
       {
         "group": "Help",
         "pages": [
+          "help",
           "troubleshooting"
         ]
       }
