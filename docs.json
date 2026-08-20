@@ -55,8 +55,8 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Open Knit",
-      "href": "https://app.knit-bundle.co"
+      "label": "Install Knit",
+      "href": "https://apps.shopify.com/knit-bundles"
     }
   },
   "contextual": {
