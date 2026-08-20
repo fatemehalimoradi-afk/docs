@@ -52,11 +52,47 @@ You can combine sets. Example: **Single Product** for a hero item, plus **Shopif
 
 ## Conditions and rewards
 
-- A **condition** is the rule the shopper must meet (for example, quantity 2).
-- A **reward** is what they get when the condition is met (for example, 19% off).
-- Conditions and rewards are grouped in **condition sets**. Each set is one tier, such as "Buy 2, save 19%".
+After product sets, you define **when** the offer applies and **what** the shopper gets.
 
-The discount is applied at Shopify checkout, not as a precomputed product price.
+Each **condition-reward** pair is one tier. Knit checks the conditions on that card; if they are met, those rewards apply — for example “Buy 2, save 19%”. Use **Add new condition-reward** for the next tier, such as “Buy 4, save 25%”.
+
+### Conditions
+
+A condition is a quantity rule: **Customer buys** this many **items from** a product set.
+
+There are **four** comparisons:
+
+| Comparison | Meaning | Example |
+| --- | --- | --- |
+| **at least** | This number or more | Buy 2 or more |
+| **at most** | This number or fewer | Buy no more than 5 |
+| **exactly** | This number only | Buy exactly 2 |
+| **between** | An inclusive range | Buy 2–4 |
+
+Pick which **product set** the count applies to:
+
+- **Single Product** and **Single Product (Collection-backed)** — units of that one product.
+- **Shopify Collection** — total units the shopper picked from the collection.
+
+You can add more than one condition on the same card. All of them must be true for the reward to apply — for example “at least 1 from the hero set” and “at least 2 from add-ons”.
+
+### Rewards
+
+A reward is the discount: **Customer gets** this **discount on** a product set.
+
+**Percentage** — a percent off those items (0–100). Example: 19% off.
+
+**Fixed amount** — a money amount off, in your shop currency. Then choose how it spreads:
+
+| Mode | Meaning |
+| --- | --- |
+| **Total** | The amount off the qualifying items as a group, once. $10 on two product sets is $10 off the combined subtotal. |
+| **Per selector** | The amount off each product set you attached the reward to. $10 on two product sets is $20 off. |
+| **Per unit** | The amount off each unit in those product sets. $5 with quantity 3 is $15 off. |
+
+The product set on the reward can be the same as the condition, or a different one — for example, require a quantity of product A and discount product B.
+
+The discount is applied at Shopify checkout, not as a precomputed product price. See [How discounts apply](/how-discounts-apply).
 
 ## Bundle state
 
