@@ -29,12 +29,7 @@
         "group": "Integrations",
         "pages": [
           "integrations",
-          "tapcart"
-        ]
-      },
-      {
-        "group": "Developer",
-        "pages": [
+          "tapcart",
           "headless-bundles-api"
         ]
       },
@@ -52,7 +47,12 @@
     "dark": "/logo/dark.svg"
   },
   "navbar": {
-    "links": [],
+    "links": [
+      {
+        "label": "Help",
+        "href": "/help"
+      }
+    ],
     "primary": {
       "type": "button",
       "label": "Open Knit",
