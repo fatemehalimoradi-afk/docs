@@ -244,10 +244,113 @@ whose `source`/`v` you don't recognize.
 ]
 ```
 
-> **Critical:** the `__FB_ATC_UID` attribute must reach Shopify as a **line-item
-> property**. The Knit Discount Function uses it to group bundle lines and apply
-> the tier discount. If your cart layer, Hydrogen cart, or middleware strips
-> custom line-item properties, the discount will not apply.
+### Cart attribute required for discount (`__FB_ATC_UID`)
+
+Bundle discounts are applied by the **Knit Discount Function** (a Shopify
+Function on `cart.lines.discounts.generate.run`). It does **not** infer
+bundles from products alone. It only discounts lines that carry the line-item
+property:
+
+| | |
+| --- | --- |
+| **Key** | `__FB_ATC_UID` (exact spelling, two underscores) |
+| **Value** | Pipe-delimited string — see format below |
+
+If this property is missing, renamed, or stripped by your cart layer, add-to-cart
+succeeds but **no bundle discount appears** at checkout.
+
+#### Value format
+
+```
+<bundleId>|<version>|<conditionSetId>|<selectorId>|<atcId>
+```
+
+Example (matches the sample `/headless/bundles` response above):
+
+```
+72|3|213|157|1620000000000
+```
+
+| Segment | Source in `/headless/bundles` | Role |
+| --- | --- | --- |
+| `bundleId` | `bundle.id` | Which bundle definition to load from the discount metafield |
+| `version` | `bundle.version` | Version baked in at add-to-cart. If the merchant edits the bundle afterward (`version` bumps), the function can re-match conditions instead of silently failing |
+| `conditionSetId` | `bundle.conditionSets[].id` of the **satisfied** tier | Which condition/reward set to evaluate (e.g. the “Buy 2 → 19% off” set) |
+| `selectorId` | `bundle.selectors[].id` for **this** line | Maps the cart line to a selector so quantity conditions and rewards know which item is which |
+| `atcId` | Opaque id for this add-to-cart click (usually `Date.now()` ms) | Groups every line from the **same** click into one “clicked bundle”. All lines in one ATC must share the same `atcId`; different clicks must use different `atcId`s |
+
+Notes:
+
+- **`selectorId` differs per line** when the bundle has multiple selectors. The
+  full string is therefore often **not** identical across lines — only `atcId`
+  (and usually `bundleId` / `version` / `conditionSetId`) is shared.
+- Lines with no satisfied condition set should **omit** `__FB_ATC_UID` (they
+  are ordinary cart lines; the function ignores them for bundling).
+- Do not invent IDs. Use the numeric string IDs from the Data API / embed
+  payload as-is (e.g. `"72"`, not a GID).
+
+#### Embed mode (iframe)
+
+The iframe **already stamps** `__FB_ATC_UID` on each `lineItems[].attributes`
+entry. Your only job is to forward those attributes unchanged into Shopify:
+
+| Your cart API | How to pass the attribute |
+| --- | --- |
+| Storefront API `cartLinesAdd` / Cart API | `attributes: [{ key: "__FB_ATC_UID", value: "..." }]` |
+| Ajax `/cart/add.js` | `properties: { "__FB_ATC_UID": "..." }` |
+| Tapcart `cart/add` | Keep the `attributes` array on each line item |
+
+Do not filter “hidden” / underscore-prefixed properties. Many cart SDKs drop
+them by default — that is the most common cause of “items add, discount
+missing”.
+
+#### Data API mode (custom UI)
+
+When you build your own UI from `/headless/bundles`, you must set the property
+yourself when writing to the cart:
+
+1. Resolve which `conditionSet` the shopper’s selection satisfies (e.g.
+   quantity 2 → the set whose `quantity` condition has `minimum`/`maximum` 2).
+2. For each cart line that belongs to a selector referenced by that set, set:
+
+   ```js
+   {
+     key: "__FB_ATC_UID",
+     value: `${bundle.id}|${bundle.version}|${conditionSet.id}|${selector.id}|${atcId}`,
+   }
+   ```
+
+3. Use one `atcId` for every line in that single add-to-cart call.
+
+Pseudo-example for the sample bundle (Buy 2 → 19% off on selector `157`):
+
+```js
+const atcId = Date.now(); // shared across all lines in this click
+const attributes = [
+  {
+    key: "__FB_ATC_UID",
+    value: `72|3|213|157|${atcId}`, // bundle|version|conditionSet|selector|atcId
+  },
+];
+
+await cartLinesAdd({
+  lines: [
+    { merchandiseId: "gid://shopify/ProductVariant/42299900362945", quantity: 2, attributes },
+  ],
+});
+```
+
+#### How to verify
+
+1. Add a qualifying bundle to cart and open the cart (or place a test order).
+2. Confirm each discounted line shows a line-item property / attribute named
+   `__FB_ATC_UID` with a 5-part `|`-delimited value.
+3. Confirm the Knit automatic discount is **Active** in Shopify admin →
+   Discounts, and the bundle is **Active** in Knit.
+
+If the property is present but the discount still does not apply, the
+`conditionSetId` / quantities likely no longer match the live bundle definition
+(stale cart after a merchant edit), or the automatic discount was disabled.
 
 ### Minimal host handler
 
@@ -387,6 +490,11 @@ prices:
 To display "Buy 2, save 19%" tiers, map each `conditionSet` to its exact
 quantity (`minimum === maximum`) and read the reward for that selector. See the
 example renderer for a complete implementation pattern.
+
+Display prices are not enough to get a discount at checkout. When you add the
+qualifying lines to the cart, stamp `__FB_ATC_UID` as described in
+[Cart attribute required for discount](#cart-attribute-required-for-discount-__fb_atc_uid).
+Without that line-item property, Shopify never applies the Knit discount.
 
 ---
 
