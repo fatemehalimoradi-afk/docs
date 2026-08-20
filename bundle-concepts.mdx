@@ -5,14 +5,50 @@ description: "How Knit models products, conditions, and rewards"
 
 A Knit bundle is a merchandising offer: which products participate, when the offer applies, and what discount the shopper gets.
 
-## Selectors
+In the editor, products live in **Product sets**. Each set has an **Included item** type. There are **three**.
 
-Selectors decide which products are in the bundle.
+## Selectors (product sets)
 
-| Kind | Meaning |
+### 1. Single Product
+
+You pick **one product**.
+
+Use this when the offer is that exact item — for example “buy 2 of this shampoo, save 15%.”
+
+- Click **Select** and choose the product.
+- The shopper sees that product (variant + quantity).
+- The widget can show on **that product’s page**.
+
+### 2. Single Product (Collection-backed)
+
+You pick a **collection**, not one product.
+
+Use this when the same offer should run on every product in a collection, without adding each product by hand — for example “buy 2 of whichever t-shirt they are looking at in Basics.”
+
+- Click **Select** and choose a collection.
+- On a product page, Knit uses **the product the shopper is viewing**, but only if it is in that collection.
+- The shopper is still buying **that one product** (plus quantity). They are not picking several products from the collection.
+- If the page product is not in the collection, this set does not apply on that page.
+
+### 3. Shopify Collection
+
+You pick a **collection**. The shopper can choose **more than one product** from it.
+
+Use this for mix and match, build-a-box, or “pick any 3 from this collection.”
+
+- Click **Select** and choose a collection.
+- The widget lists products from the collection. Quantity on each row starts at 0 until the shopper adds it.
+- Quantity and discount rules apply across those picks.
+
+### How to choose
+
+| You want | Use |
 | --- | --- |
-| Product | One specific product |
-| Collection | Products from a collection (single or multi) |
+| One specific product | **Single Product** |
+| Same volume offer on every product in a collection, one product per page | **Single Product (Collection-backed)** |
+| Shopper mixes several products from a collection | **Shopify Collection** |
+
+You can combine sets. Example: **Single Product** for a hero item, plus **Shopify Collection** for add-ons.
 
 ## Conditions and rewards
 
@@ -20,8 +56,8 @@ Selectors decide which products are in the bundle.
 - A **reward** is what they get when the condition is met (for example, 19% off).
 - Conditions and rewards are grouped in **condition sets**. Each set is one tier, such as "Buy 2, save 19%".
 
-Knit does not send a precomputed bundle price. The widget (or your headless UI) maps condition sets to tiers, and a Shopify Discount Function applies the reward at checkout.
+The discount is applied at Shopify checkout, not as a precomputed product price.
 
 ## Bundle state
 
-Only **active** bundles are returned by the storefront and headless APIs.
+Only **Active** bundles appear on the storefront.
