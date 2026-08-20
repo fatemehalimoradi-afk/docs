@@ -25,4 +25,10 @@ If override is off, the widget shows its own add-to-cart control.
 
 ## Checkout
 
-The discount still comes from the Knit automatic discount in Shopify admin → **Discounts**. Details: [How discounts apply](/how-discounts-apply).
+Shoppers pay in **Shopify checkout**. A Shopify **Discount Function** shipped with the app applies the bundle reward. You do not configure this per add-to-cart.
+
+Keep the Knit automatic discount **Active** in Shopify admin → **Discounts**. Do not delete it.
+
+When a shopper adds a bundle, every line in that add carries `__FB_ATC_UID`. The theme app extension sets this. The Discount Function uses it to group the lines, match the tier, and apply the reward. If a cart app strips line-item properties, items sit in the cart at **full price**.
+
+To confirm: add a bundle from the widget, complete a test order, and check Shopify admin → **Orders**. Each bundle line should show `__FB_ATC_UID` and the discount. If the discount is missing, see [Troubleshooting](/troubleshooting).

@@ -35,10 +35,20 @@ Use this page when the widget is missing, add-to-cart fails, or checkout does no
 
 Items can land in the cart at full price when `__FB_ATC_UID` never reaches Shopify.
 
-1. Confirm the Knit automatic discount is **Active**.
+1. Confirm the Knit automatic discount is **Active** in Shopify admin → **Discounts**.
 2. Confirm the bundle is **Active**.
-3. Inspect the cart or order: each bundle line must show `__FB_ATC_UID` as a line-item property.
-4. If a cart app, Hydrogen cart, or middleware strips custom properties, keep this one. See [How discounts apply](/how-discounts-apply).
+3. Add a bundle from the widget, then open the test order in **Orders**. Each bundle line should show `__FB_ATC_UID` and the discount.
+
+| Surface | What must happen |
+| --- | --- |
+| Liquid theme | The theme app extension adds the property. Do not strip line-item properties in cart apps. |
+| Headless embed | Your `postMessage` handler must pass `attributes` through as Shopify line-item properties. See [Headless Bundles API](/headless-bundles-api#postmessage-bridge). |
+| Tapcart | The Knit block adds the property. No extra merchant step. |
+| Custom cart / Hydrogen | Your cart API must persist custom line-item properties all the way to checkout. |
+
+<Warning>
+  If a cart layer, middleware, or checkout app drops unknown line-item properties, the bundle discount will not apply. Keep `__FB_ATC_UID`.
+</Warning>
 
 ## What to send support
 

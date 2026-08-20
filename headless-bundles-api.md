@@ -33,13 +33,11 @@ target store with a `shop` query parameter:
 
 ## Prerequisites
 
-1. Install the app from the Shopify App Store listing
-   [https://apps.shopify.com/knit-bundles](https://apps.shopify.com/knit-bundles)
-   (listed as **Knit Bundle Engine**). Do not search the App Store by name.
+1. Install Knit from the [Shopify App Store](https://apps.shopify.com/knit-bundles).
 2. Configure **at least one active bundle**.
 3. Open the app once in the Shopify admin — this provisions the Storefront
-   access token the headless endpoints need. (Until this happens, the endpoints
-   return `APP_NOT_INSTALLED`.)
+   access token the headless endpoints need. Until this happens, the endpoints
+   return `APP_NOT_INSTALLED`.
 
 You do **not** need to embed the theme app extension for the headless endpoints
 to work.
@@ -248,8 +246,8 @@ whose `source`/`v` you don't recognize.
 
 > **Critical:** the `__FB_ATC_UID` attribute must reach Shopify as a **line-item
 > property**. The Knit Discount Function uses it to group bundle lines and apply
-> the tier discount. If your cart layer strips custom line-item properties, the
-> discount will not apply.
+> the tier discount. If your cart layer, Hydrogen cart, or middleware strips
+> custom line-item properties, the discount will not apply.
 
 ### Minimal host handler
 

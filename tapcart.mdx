@@ -5,7 +5,7 @@ description: "Add the Knit bundle widget to a Tapcart product page"
 
 This guide is for Tapcart App Studio. You do not need to write code or use the Tapcart CLI. Knit prepares and publishes the block; you add it to the product page and publish.
 
-Knit bundles on Tapcart use the **same active bundles** as your Shopify store. Add to cart goes to **Tapcart's native cart**. The discount still applies in Shopify checkout. See [How discounts apply](/how-discounts-apply).
+Knit bundles on Tapcart use the **same active bundles** as your Shopify store. Add to cart goes to **Tapcart's native cart**. The Knit block attaches the discount info — no extra merchant step. The discount still applies in Shopify checkout. Keep the Knit automatic discount **Active** in Shopify admin → **Discounts**.
 
 ```
 Your Tapcart app
@@ -75,7 +75,7 @@ Always verify in **Preview your app** or on a device.
 3. Select options and tap the bundle **Add to Cart** button.
 4. Tapcart cart should show every bundle line.
 
-Then complete a test order and confirm `__FB_ATC_UID` on the Shopify order lines. See [How discounts apply](/how-discounts-apply).
+Then complete a test order. Each bundle line in Shopify admin → **Orders** should show `__FB_ATC_UID` and the discount. If items are in the cart with no discount, see [Troubleshooting](/troubleshooting).
 
 ## Troubleshooting
 

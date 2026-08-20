@@ -22,8 +22,7 @@
         "pages": [
           "bundle-concepts",
           "create-a-bundle",
-          "shopify-integration",
-          "how-discounts-apply"
+          "shopify-integration"
         ]
       },
       {
@@ -80,6 +79,10 @@
     {
       "source": "/integrations/headless-bundles-api",
       "destination": "/headless-bundles-api"
+    },
+    {
+      "source": "/how-discounts-apply",
+      "destination": "/shopify-integration"
     }
   ]
 }
