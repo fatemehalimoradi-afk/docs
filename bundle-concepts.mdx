@@ -1,44 +1,109 @@
 ---
 title: "Bundle concepts"
-description: "How Knit models products, conditions, and rewards"
+description: "Compose product sets, conditions, rewards, and the widget"
 ---
 
-A Knit bundle is a merchandising offer: which products participate, when the offer applies, and what discount the shopper gets.
+Knit is fully customizable. You do not pick a bundle type. You assemble each offer yourself: **product sets**, **conditions**, and **rewards** for the logic, and the **widget** (renderer and CSS) for how it looks and behaves on the storefront.
 
-In the editor, products live in **Product sets**. Each set has an **Included item** type. There are **three**.
+This page is how the logic pieces connect. You combine them however the offer needs.
 
-## Selectors (product sets)
+## How the pieces connect
 
-### 1. Single Product
+**Product sets** are the products in the offer — Set #1, Set #2, and so on.
 
-You pick **one product**.
+**Conditions** and **rewards** attach to those sets. A condition counts items from a set (when this tier applies). A reward discounts a set (what the shopper gets, and on which products). Neither piece stands alone: every condition and every reward **names a product set**.
 
-Use this when the offer is that exact item — for example “buy 2 of this shampoo, save 15%.”
+You choose the rest:
 
-- Click **Select** and choose the product.
-- The shopper sees that product (variant + quantity).
-- The widget can show on **that product’s page**.
+- One set or several
+- One condition or several on the same card (all must be true)
+- The discount on the same set as the condition, or on a different set
+- As many **condition-reward** cards as you need — each card is one tier
 
-### 2. Single Product (Collection-backed)
+The combination is the offer. The examples below are assemblies, not the only shape a Knit bundle can take.
 
-You pick a **collection**, not one product.
+<Steps>
+  <Step title="Product sets">
+    Name the products in play. Each set is one product, or a collection.
+  </Step>
+  <Step title="Conditions">
+    Attach quantity rules to those sets: *Customer buys at least 2 items from Set #1*.
+  </Step>
+  <Step title="Rewards">
+    Attach discounts to those sets: *Customer gets 19% off Set #1* — or off a different set.
+  </Step>
+  <Step title="Widget">
+    Customize the renderer and CSS so the storefront matches the brand. Product sets, conditions, and rewards stay the source of truth for who qualifies and what is discounted.
+  </Step>
+</Steps>
 
-Use this when the same offer should run on every product in a collection, without adding each product by hand — for example “buy 2 of whichever t-shirt they are looking at in Basics.”
+## Example: volume on one product
 
-- Click **Select** and choose a collection.
-- On a product page, Knit uses **the product the shopper is viewing**, but only if it is in that collection.
-- The shopper is still buying **that one product** (plus quantity). They are not picking several products from the collection.
-- If the page product is not in the collection, this set does not apply on that page.
+Buy 2 of this shampoo, save 19%.
 
-### 3. Shopify Collection
+| Piece | In the editor |
+| --- | --- |
+| Product set | Set #1: **Single Product** → the shampoo |
+| Condition | Customer buys **at least 2** items from **Set #1** |
+| Reward | Customer gets **19%** discount on **Set #1** |
+
+The widget can show on that shampoo’s page. At checkout, 19% off applies when the quantity is 2 or more.
+
+The condition and the reward both name Set #1. Change only the product set, and the same “buy 2, 19% off” becomes a different offer:
+
+| You want | Set #1 | What the shopper does |
+| --- | --- | --- |
+| Volume on one product | **Single Product** → the shampoo | Buy 2 of that shampoo |
+| Same volume on every product in a collection | **Single Product (Collection-backed)** → Basics | Buy 2 of *the product they are viewing* (if it is in Basics). They are not mixing products. |
+| Mix and match | **Shopify Collection** → Basics | Pick any products from Basics. Quantity 2 is the **total** across those picks. |
+
+Volume vs mix and match is not a type you pick. It is one way of combining the same pieces.
+
+## Example: discount a different set
+
+The reward can point at a **different** set than the condition.
+
+Buy the phone, get 20% off a case:
+
+| Piece | In the editor |
+| --- | --- |
+| Set #1 | **Single Product** → the phone |
+| Set #2 | **Shopify Collection** → cases |
+| Conditions | at least 1 from Set #1 **and** at least 1 from Set #2 |
+| Reward | 20% off **Set #2** |
+
+The phone is required. The discount lands on the case. Two conditions on the same card must **both** be true.
+
+## More than one tier
+
+**Add new condition-reward** adds the next card against the **same** product sets.
+
+- Card 1: at least 2 from Set #1 → 19% off Set #1
+- Card 2: at least 4 from Set #1 → 25% off Set #1
+
+Knit checks each card. The shopper gets the reward for the tier they meet.
+
+## Product sets
+
+Each set has an **Included item** type.
+
+### Single Product
+
+You pick **one product**. Use this when the offer is that exact item.
+
+The shopper sees that product (variant + quantity). The widget can show on **that product’s page**.
+
+### Single Product (Collection-backed)
+
+You pick a **collection**, not one product. Use this when the same volume offer should run on every product in a collection, without adding each product by hand.
+
+On a product page, Knit uses **the product the shopper is viewing**, but only if it is in that collection. The shopper is still buying **that one product**. If the page product is not in the collection, this set does not apply on that page.
+
+### Shopify Collection
 
 You pick a **collection**. The shopper can choose **more than one product** from it.
 
-Use this for mix and match, build-a-box, or “pick any 3 from this collection.”
-
-- Click **Select** and choose a collection.
-- The widget lists products from the collection. Quantity on each row starts at 0 until the shopper adds it.
-- Quantity and discount rules apply across those picks.
+The widget lists products from the collection. Quantity on each row starts at 0 until the shopper adds it. Quantity and discount rules apply across those picks.
 
 ### How to choose
 
@@ -50,17 +115,9 @@ Use this for mix and match, build-a-box, or “pick any 3 from this collection.�
 
 You can combine sets. Example: **Single Product** for a hero item, plus **Shopify Collection** for add-ons.
 
-## Conditions and rewards
+## Conditions
 
-After product sets, you define **when** the offer applies and **what** the shopper gets.
-
-Each **condition-reward** pair is one tier. Knit checks the conditions on that card; if they are met, those rewards apply — for example “Buy 2, save 19%”. Use **Add new condition-reward** for the next tier, such as “Buy 4, save 25%”.
-
-### Conditions
-
-A condition is a quantity rule: **Customer buys** this many **items from** a product set.
-
-There are **four** comparisons:
+A condition is: **Customer buys** this many **items from** a product set.
 
 | Comparison | Meaning | Example |
 | --- | --- | --- |
@@ -69,16 +126,14 @@ There are **four** comparisons:
 | **exactly** | This number only | Buy exactly 2 |
 | **between** | An inclusive range | Buy 2–4 |
 
-Pick which **product set** the count applies to:
+What “items from” means depends on the set:
 
 - **Single Product** and **Single Product (Collection-backed)** — units of that one product.
 - **Shopify Collection** — total units the shopper picked from the collection.
 
-You can add more than one condition on the same card. All of them must be true for the reward to apply — for example “at least 1 from the hero set” and “at least 2 from add-ons”.
+## Rewards
 
-### Rewards
-
-A reward is the discount: **Customer gets** this **discount on** a product set.
+A reward is: **Customer gets** this **discount on** a product set.
 
 **Percentage** — a percent off those items (0–100). Example: 19% off.
 
@@ -90,9 +145,11 @@ A reward is the discount: **Customer gets** this **discount on** a product set.
 | **Per selector** | The amount off each product set you attached the reward to. 10 off on two product sets is 20 off. |
 | **Per unit** | The amount off each unit in those product sets. 5 off with quantity 3 is 15 off. |
 
-The product set on the reward can be the same as the condition, or a different one — for example, require a quantity of product A and discount product B.
-
 The discount is applied at Shopify checkout, not as a precomputed product price. Keep the Knit automatic discount **Active** in Shopify admin → **Discounts**.
+
+## Appearance
+
+Logic is only half of the bundle. In the same editor, **Renderer** and **Stylings (CSS)** control how the offer looks and behaves on the product page — layout, copy, and interaction. Change the widget to match the brand. The product sets, conditions, and rewards stay the source of truth for who qualifies and what is discounted.
 
 ## Bundle state
 

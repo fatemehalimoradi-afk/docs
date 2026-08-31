@@ -61,7 +61,7 @@ each bundle. Use this when you want to build your own bundle UI.
 | `shop` | **Yes** | Your `{store}.myshopify.com` domain. |
 | `product_id` | No | Numeric Shopify product ID. When provided, the response is **filtered to only the bundles applicable to that product** (product-single match, or collection membership). Omit it to receive every bundle. |
 | `handle` | No | Return only the bundle with this metaobject handle. |
-| `type` | No | Filter bundles by type (defaults to the standard bundle type). |
+| `type` | No | Omit. Knit does not currently expose multiple bundle types. |
 | `language` | No | Storefront language code (e.g. `EN`, `DE`) for `@inContext` translation and market pricing. |
 | `country` | No | Storefront country code (e.g. `US`, `DE`) for market pricing. |
 
