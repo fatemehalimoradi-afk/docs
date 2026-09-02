@@ -1,0 +1,42 @@
+---
+title: "Data attributes"
+description: "The interaction contract the runtime wires after each render"
+---
+
+After each render the runtime queries these attributes inside `container` and attaches delegated listeners. The **value is always the selector’s** `sel.id` (except `data-nameless-atc`, which takes the bundle id).
+
+| Attribute | Element | Value | Runtime behavior |
+| --- | --- | --- | --- |
+| `data-nameless-variant-selector` | `<select>` | `sel.id` | On `change`, dispatches `variantChange` with `select.value` as the variant id |
+| `data-nameless-qty-selector` | input / button (see patterns) | `sel.id` | Quantity interaction; behavior inferred from element type and structure |
+| `data-nameless-product-id` | the control on a **collectionMulti** row | `product.id` | Tells the runtime which product in the collection changed. Required on every multi row control |
+| `data-nameless-atc` | `<button>` | `snapshot.bundleId` | On `click`, adds the whole bundle. Runtime manages the button’s `disabled` state and label |
+
+Each `<option value="…">` in a variant `<select>` must be the variant id — the runtime reads `select.value` verbatim.
+
+<Note>
+  Prefer these attributes over `dispatch`. Quantity, variant, selection, and add-to-cart all have a supported path already. That path stays correct through repaints, PDP coupling, plugin hooks, and the override pipeline. See [Runtime API](/runtime-api).
+</Note>
+
+## Quantity patterns
+
+| Pattern | Markup | Behavior |
+| --- | --- | --- |
+| **Number input** | `<input type="number" min="0" step="1" data-nameless-qty-selector="{sel.id}">` | On `change`, sets quantity to `Number(value)`. Invalid or empty falls back to `min` or `1` |
+| **Quantity card** | `<button type="button" data-nameless-qty-selector="{sel.id}" value="{qty}">` | On `click`: if the current quantity already equals `value`, sets `0` (toggle off); otherwise sets `value`. Set `aria-pressed` yourself for styling |
+| **Optional add-on** | One checkbox **and** one number input sharing the same selector id (and product id on multi rows) | Unchecking sets quantity `0` and remembers the number; re-checking restores it. Editing the number while unchecked only updates the remembered value |
+| **Multi-selector tier** | `<button type="button">` containing two or more `<input type="hidden" data-nameless-qty-selector="{sel.id}" value="{qty}">` | On `click`, applies all descendant quantities atomically. Put the attribute on the hidden inputs, **never** on the tier button. Set `aria-pressed` yourself |
+
+## Placement rules
+
+- Single-product selectors (`productSingle`, or `collectionSingle` with a resolved product): one variant `<select>` and one qty control per selector, and **no** `data-nameless-product-id`.
+- `collectionMulti`: every variant select, qty input, checkbox, and card on a row carries **both** the selector id and `data-nameless-product-id="{product.id}"`.
+- Pair exactly one checkbox with one number input per add-on selector — never two number inputs for the same selector/product pair.
+- Tier buttons need at least two hidden qty inputs with distinct selector ids.
+- Controls inside a disabled `<fieldset>`, or carrying `disabled` / `aria-disabled="true"`, are ignored by the runtime.
+- Don’t put interaction attributes on anything that shouldn’t trigger an action.
+- Render the ATC button enabled unless the bundle is genuinely unbuyable (e.g. a selected item is sold out); the runtime takes over its label and disabled state during the request.
+
+On a `collectionMulti` row you don’t need to send a variant when the quantity moves from `0` upward — the runtime resolves it from the existing selection or the product’s first available variant.
+
+When `snapshot.meta.atcOverride` is `true`, omit `[data-nameless-atc]` entirely. See [Renderer function](/renderer-function#pdp-add-to-cart-override).

@@ -488,8 +488,8 @@ prices:
   off, or a `fixedDiscount` amount.
 
 To display "Buy 2, save 19%" tiers, map each `conditionSet` to its exact
-quantity (`minimum === maximum`) and read the reward for that selector. See the
-example renderer for a complete implementation pattern.
+quantity (`minimum === maximum`) and read the reward for that selector. See
+[Renderer function](/renderer-function) for a complete implementation pattern.
 
 Display prices are not enough to get a discount at checkout. When you add the
 qualifying lines to the cart, stamp `__FB_ATC_UID` as described in

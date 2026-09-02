@@ -1,0 +1,73 @@
+---
+title: "Widget"
+description: "The renderer, CSS, and plugins are how a bundle appears and behaves"
+---
+
+A Knit bundle is product sets, conditions, rewards, **and** the widget. The first three decide who qualifies and what is discounted. The widget is how that offer looks and behaves on the storefront.
+
+You write it in the same editor: the bundle’s **Renderer** (JS) and **Stylings** (CSS) assets, plus (optionally) a script you load on the storefront. You do not need repository access.
+
+See [how the pieces connect](/bundle-concepts) for product sets, conditions, and rewards.
+
+<CardGroup cols={2}>
+  <Card title="Renderer function" icon="code" href="/renderer-function">
+    Paint the widget HTML from bundle state.
+  </Card>
+  <Card title="Data attributes" icon="hand-pointer" href="/data-attributes">
+    The interaction contract the runtime wires after each render.
+  </Card>
+  <Card title="Styling" icon="palette" href="/styling">
+    Scope CSS so it only touches this widget.
+  </Card>
+  <Card title="Plugin hooks" icon="plug" href="/plugin-hooks">
+    Gate, annotate, or observe add-to-cart.
+  </Card>
+  <Card title="Resolver stages" icon="shuffle" href="/resolver-stages">
+    Wrap the PDP add-to-cart override pipeline.
+  </Card>
+  <Card title="Runtime API" icon="terminal" href="/runtime-api">
+    Read state from outside the widget, plus debugging.
+  </Card>
+</CardGroup>
+
+## What you can extend
+
+| Extension point | What it is | Where it lives |
+| --- | --- | --- |
+| **Renderer function** | JavaScript that paints the widget HTML from bundle state | Bundle’s **JS asset** (admin) |
+| **Stylings** | CSS for the markup your renderer emits | Bundle’s **CSS asset** (admin) |
+| **Plugin hooks** | JS that observes, blocks, or annotates add-to-cart | Any storefront script you load, including the **JS asset** |
+| **Resolver stages** | JS that reshapes the PDP add-to-cart override pipeline | Same storefront script |
+
+The renderer and CSS are **per bundle**. Plugins and resolvers are **global** to the page and see every bundle on it.
+
+In the editor, product sets are what shoppers pick from. In the snapshot they appear as **selectors**:
+
+| Editor | Snapshot `kind` |
+| --- | --- |
+| Single Product | `productSingle` |
+| Single Product (Collection-backed) | `collectionSingle` |
+| Shopify Collection | `collectionMulti` |
+
+## How the page boots
+
+```
+theme block renders a mount element  [data-nameless-block]
+        │
+        ├─ bundle data published to  window.nameless.bundles
+        ├─ CSS asset fetched once → injected as a scoped <style>
+        └─ JS asset loaded once via <script src> → your script calls
+                 window.nameless.defineRenderer(fn)
+        │
+runtime installs on window.nameless  (dispatch / subscribe / use)
+        │
+on every state change:  fn({ snapshot, container, locale, t })
+        │
+after every render: runtime attaches delegated listeners for the
+                    data-nameless-* attributes in your HTML
+```
+
+Two consequences:
+
+1. **Your renderer runs many times** — once on mount and again after every quantity, variant, or selection change. It must repaint from scratch each time.
+2. **You never wire events.** The runtime owns all interactivity, discovered through data attributes. That is why the renderer can replace `innerHTML` on every call without breaking clicks.

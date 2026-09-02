@@ -1,0 +1,160 @@
+---
+title: "Renderer function"
+description: "Register a renderer and paint the widget from the snapshot"
+---
+
+The JS asset must call `defineRenderer` exactly once, at the top level:
+
+```js
+window.nameless.defineRenderer(function (ctx) {
+  ctx.container.innerHTML = "<div class='nb-bundle'>…</div>";
+});
+```
+
+Do not wrap the call in `DOMContentLoaded`, `setTimeout`, or a conditional guard. Registration is matched to the loading bundle via `document.currentScript`, so a deferred call registers against nothing and the widget never renders.
+
+## The context object
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `snapshot` | `BundleSnapshot` | Read-only current state of this bundle |
+| `container` | `HTMLElement` | Paint here. Already carries `data-nameless-widget="{bundleId}"` |
+| `locale` | `string` | Canonical BCP-47 tag (`"en"`, `"pt-BR"`). Safe for `Intl.*`. Never null |
+| `t` | `(source, vars?) => string` | Translates merchant-visible copy |
+
+There is no `dispatch` in the context — don’t look for one.
+
+`ctx.t` uses the English source string as the key, so there are no key names to invent:
+
+```js
+ctx.t("Add to cart");
+ctx.t("Save {{percent}}%", { percent: 15 });
+```
+
+A missing translation renders the literal you wrote, never a blank or a key. If you are editing a renderer that already ships `ctx.t("…")` literals, keep them byte-for-byte — the literal is the key to the merchant’s stored translations, and rewording it orphans every locale. Change the markup around a literal rather than the literal itself. Translate whole phrases, never fragments you concatenate, and avoid fixed-width buttons: translated copy runs up to 50% longer.
+
+## Hard rules
+
+| Rule | Why |
+| --- | --- |
+| No `addEventListener`, no inline `on*=""` | The runtime owns interactivity; your handlers die on the next repaint |
+| No `window.nameless.dispatch(...)` | State changes come from the [attribute contract](/data-attributes), not the renderer |
+| No `fetch` / `XMLHttpRequest` | Everything you may render is already in the snapshot |
+| No globals, no `localStorage`, no timers | The renderer must be a pure function of the snapshot |
+| Never cache DOM nodes between calls | Each call replaces the markup |
+| Escape every snapshot string | Product titles are merchant input |
+
+Escaping helper — apply to anything out of `snapshot`, never to `ctx.t` output (it escapes itself, and double-escaping shows shoppers `&quot;`):
+
+```js
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+```
+
+## The snapshot
+
+```ts
+interface BundleSnapshot {
+  bundleId: string;
+  meta: { title: string; subtitle: string | null; atcOverride: boolean };
+  selectors: NormalizedSelector[];
+  selections: { [selectorId: string]: null | SelectionEntry | SelectionEntry[] };
+  conditionSets: ConditionSet[]; // discount rules; rarely rendered directly
+  status: "idle" | "ready" | "invalid";
+  totals: {
+    itemCount: number;
+    baseSubtotal: number; // before discounts
+    subtotal: number; // after discounts
+    currencyCode: string | null;
+  };
+}
+
+type NormalizedSelector =
+  | { kind: "productSingle"; id: string; product: Product }
+  | {
+      kind: "collectionSingle";
+      id: string;
+      collection: Collection;
+      resolvedProduct: Product | null;
+    }
+  | { kind: "collectionMulti"; id: string; collection: Collection };
+
+interface Product {
+  id: string;
+  handle: string;
+  title: string;
+  variants: Array<{
+    id: string; // → <option value>
+    title: string;
+    priceAmount: number;
+    currencyCode: string;
+    available: boolean;
+    image: {
+      url: string;
+      altText: string | null;
+      width: number | null;
+      height: number | null;
+    } | null;
+    inventoryQuantity: number | null;
+  }>;
+}
+
+interface SelectionEntry {
+  productId: string;
+  variantId: string;
+  quantity: number;
+  soldOut: boolean;
+  basePrice: number; // before discounts
+  finalPrice: number; // after discounts
+  cumulativePercentageDiscount: number;
+  appliedRewards: Array<{ id: string }>;
+}
+```
+
+All ids are Shopify GIDs. `Collection` is `{ id, handle, title, products: Product[] }` — `products` is populated for `collectionMulti` and empty for `collectionSingle`.
+
+## Selector kinds
+
+| `kind` | Render | Products from | `selections[sel.id]` |
+| --- | --- | --- | --- |
+| `productSingle` | One product row | `sel.product` | entry or `null` |
+| `collectionSingle` | One row when `resolvedProduct` is set, else an empty state | `sel.resolvedProduct` | entry or `null` |
+| `collectionMulti` | One row per collection product | `sel.collection.products` | array of entries (may be `[]`) |
+
+Reading recipes:
+
+- Iterate `snapshot.selectors` and branch on `sel.kind` **before** touching product data.
+- Single selectors: guard with `Array.isArray(entry)` and treat an array as `null`. Use `entry.variantId` for the selected `<option>`, `entry.quantity` for the qty control.
+- `collectionMulti`: for each product in `sel.collection.products`, find its state by matching `entry.productId === product.id` inside the array. Quantity `0` means unselected; on first load the array is empty, so every row shows `0`.
+- Never hardcode a starting quantity. The engine sets initial quantities from the bundle’s first condition set before the first render — display `entry.quantity`.
+- Never fetch collection members yourself; they arrive in the snapshot.
+- Show discounts by comparing `basePrice` vs `finalPrice` per row, and `totals.baseSubtotal` vs `totals.subtotal` in the footer.
+- Derive currency from the variant’s `currencyCode` or `totals.currencyCode`.
+- Handle `collectionSingle` with `resolvedProduct: null` — don’t invent a product.
+
+## PDP add-to-cart override
+
+`snapshot.meta.atcOverride` is a merchant setting, not something the renderer controls. When it is `true`, the theme’s own add-to-cart button drives the bundle: the widget is mounted directly above it and the host intercepts the native click.
+
+**Branch your footer on it:** when `atcOverride` is `true`, omit your own ATC button entirely (the host strips stray `[data-nameless-atc]` nodes as a safety net). When it is `false`, render the button as usual.
+
+See [Shopify integration](/shopify-integration#add-to-cart-override) and [Resolver stages](/resolver-stages).
+
+## When things go wrong
+
+The host logs structured codes prefixed with `[nameless]`:
+
+| Code | Meaning | Effect |
+| --- | --- | --- |
+| `RENDERER_THREW` | Your callback threw | Container keeps the last successful paint (or stays empty) |
+| `RENDERER_LOAD_ERROR` | The CSS fetch or the JS `<script>` failed | Widget does not render at all for that bundle |
+| `RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` element on the page | Renderer never called — the theme block is missing |
+
+Stay defensive: guard against empty `selectors`, `null` selections, empty `collection.products`, and missing `image`. If CSS fails, the JS is not executed, so treat both assets as required — but still write semantic, labelled markup so the widget survives a styling regression.
+
+Next: the [data attributes](/data-attributes) the runtime wires after each paint.

@@ -1,0 +1,31 @@
+---
+title: "Styling"
+description: "Scope CSS so it only touches this bundle’s widget"
+---
+
+Write `[data-nameless-widget]` as your root selector. At inject time the host rewrites every occurrence to `[data-nameless-widget="{bundleId}"]`, so each bundle’s CSS can only touch its own widget:
+
+```css
+[data-nameless-widget] .nb-bundle {
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  padding: 1.25rem;
+  font-family: inherit;
+}
+
+[data-nameless-widget] .nb-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+```
+
+| Do | Don’t |
+| --- | --- |
+| Prefix your own classes with a namespace (e.g. `nb-`) | Style bare elements globally (`button {}`, `img {}`, `* {}`) |
+| Keep every rule under `[data-nameless-widget]` | Style theme classes or anything your renderer doesn’t emit |
+| Inherit typography (`font-family: inherit`) so you match the theme | `@import` external stylesheets or pull in remote web fonts |
+
+The CSS and the renderer are one unit: every class the CSS targets must be emitted by the renderer, and vice versa. Pick one vocabulary (BEM-ish `nb-block__element--modifier` works well) and keep both assets in sync.
+
+If CSS fails to load, the JS asset is not executed and the widget does not render. Still write semantic, labelled markup so the widget survives a styling regression. See [Renderer function](/renderer-function#when-things-go-wrong).

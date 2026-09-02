@@ -24,6 +24,9 @@ Use this page when the widget is missing, add-to-cart fails, or checkout does no
 | Headless JSON `INVALID_PARAMS` | Missing or invalid `shop` | Pass `shop=your-store.myshopify.com`. |
 | Headless JSON `NOT_FOUND` | Headless not enabled on this deployment | Contact Knit support. |
 | Stale products or old tiers | Cache | Wait up to 5 minutes, then reload. |
+| Console `[nameless] RENDERER_THREW` | Renderer callback threw | Fix the JS asset. The last successful paint stays. See [Renderer function](/renderer-function#when-things-go-wrong). |
+| Console `[nameless] RENDERER_LOAD_ERROR` | CSS fetch or JS `<script>` failed | Treat both assets as required. The widget does not render. |
+| Console `[nameless] RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` on the page | Enable the theme app embed. |
 
 ## Add to cart fails
 

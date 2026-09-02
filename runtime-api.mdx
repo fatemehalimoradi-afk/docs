@@ -1,0 +1,81 @@
+---
+title: "Runtime API"
+description: "Read bundle state from outside the widget, debug, and ship"
+---
+
+Theme scripts and plugins — **never renderers** — can talk to the runtime directly.
+
+<Warning>
+  Prefer the [data attributes](/data-attributes) over `dispatch`. Quantity, variant, selection, and add-to-cart all have a supported path already: put the right `data-nameless-*` attribute on the right element and let the runtime drive it. That path is the contract we test and keep stable.
+
+  Inside a renderer, `dispatch` is **forbidden outright** — no exceptions. In other scripts, treat it as a last resort for cases the attributes genuinely can’t express (e.g. a bundle driven from an unrelated part of the page). Reading state with `subscribe` carries none of these caveats.
+</Warning>
+
+```js
+window.nameless.subscribe("bundles", function (snapshots) {
+  // called on every state change, with every mounted bundle
+});
+
+var result = window.nameless.dispatch("quantityChange", {
+  bundleId: "…",
+  selectorId: "…",
+  quantity: 2,
+});
+
+var atc = await window.nameless.dispatch("addToCart", { bundleId: "…" });
+```
+
+| Action | Payload | Returns |
+| --- | --- | --- |
+| `quantityChange` | `{ bundleId, selectorId, quantity, productId?, variantId? }` | `DispatchResult` |
+| `variantChange` | `{ bundleId, selectorId, variantId, productId? }` | `DispatchResult` |
+| `selectionPlanChange` | `{ bundleId, changes: SelectionChange[] }` | `DispatchResult` |
+| `addToCart` | `{ bundleId }` | `Promise<AddToCartResult>` |
+
+Every row above has an attribute equivalent — see [Data attributes](/data-attributes). Reach for the attribute first.
+
+`"bundles"` is the only subscribe topic. Before the runtime installs, dispatch returns `{ ok: false, code: "NOT_READY" }`.
+
+Failure codes you may see: `NOT_READY`, `UNKNOWN_ACTION`, `INVALID_PAYLOAD`, `INVALID_QUANTITY`, `UNKNOWN_BUNDLE`, `UNKNOWN_SELECTOR`, `UNKNOWN_VARIANT`, `WRONG_SELECTOR_KIND`, `EMPTY_SELECTION`, `VARIANT_UNAVAILABLE`, `SOLD_OUT`, `CART_HTTP_ERROR`, `CART_REJECTED`, `PLUGIN_BLOCKED`, `HANDLER_THREW`.
+
+Anything on `window.nameless` prefixed with `__` is an internal detail — don’t build against it.
+
+## Debugging
+
+| Task | How |
+| --- | --- |
+| See host diagnostics | Console messages prefixed `[nameless]` |
+| Trace PDP override | Set `window.nameless.__overrideDebug = true` before adding to cart |
+| Preview a draft bundle | Append `?nameless_preview=true` to the storefront URL |
+| Confirm the widget mounted | Look for `[data-nameless-block]` and `[data-nameless-widget="{id}"]` |
+| Inspect current state | `window.nameless.subscribe("bundles", console.log)` |
+
+## Pre-ship checklist
+
+### Renderer
+
+- [ ] `defineRenderer` called once, at top level, unguarded
+- [ ] Repaints entirely from `snapshot` on every call; no cached nodes, no accumulated state
+- [ ] No listeners, no `dispatch`, no `fetch`, no globals
+- [ ] Branches on all three `sel.kind` values, including `collectionSingle` with no resolved product
+- [ ] Variant `<option value>` is the variant id; qty controls show `entry.quantity`
+- [ ] `collectionMulti` controls carry both the selector id and `data-nameless-product-id`
+- [ ] Tier buttons use hidden inputs, not an attribute on the button
+- [ ] ATC button rendered only when `meta.atcOverride` is false
+- [ ] Every snapshot string escaped; every merchant-visible string through `ctx.t` (and not escaped)
+
+### Styling
+
+- [ ] Every rule scoped under `[data-nameless-widget]`
+- [ ] No global element selectors, no theme classes, no external imports
+- [ ] Class vocabulary matches the renderer exactly
+- [ ] Markup still readable and operable with the CSS disabled
+
+### Plugins
+
+- [ ] `before` hooks return within 1500ms, or tolerate being cut off
+- [ ] Blocks use a meaningful `code` and a shopper-readable `message`
+- [ ] `lineProperties` keyed by selector id; `__FB_ATC_UID` left untouched
+- [ ] Resolvers call `next()` and adjust, rather than replacing a stage wholesale
+- [ ] No `dispatch` calls that a `data-nameless-*` attribute could have handled
+- [ ] Hook failures verified to leave the shopper’s add-to-cart working

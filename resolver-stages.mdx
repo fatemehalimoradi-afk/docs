@@ -1,0 +1,52 @@
+---
+title: "Resolver stages"
+description: "Wrap the PDP add-to-cart override pipeline"
+---
+
+When a bundle runs with `meta.atcOverride`, the host intercepts the theme’s own add-to-cart via fetch, XHR, and DOM click/submit interceptors. Each step of that pipeline is a **resolver stage** you can wrap:
+
+```js
+window.nameless.use({
+  atcOverride: {
+    async resolveProductSelection(ctx, next) {
+      var base = await next(); // the built-in behavior
+      return Object.assign({}, base, { quantity: 2 });
+    },
+    shouldOverride(ctx, next) {
+      return ctx.trigger === "click" ? next() : false;
+    },
+  },
+});
+```
+
+| Stage | Purpose | Default return | Timeout |
+| --- | --- | --- | --- |
+| `resolveTargetForm` | Locate the theme’s product form | `HTMLFormElement` or `null` | 1500ms |
+| `resolveProductSelection` | Read variant / quantity from the PDP form | `{ variantId?, quantity?, productId? }` | 1500ms |
+| `shouldOverride` | Decide whether to swap this add request | `true` (must return a boolean) | 1500ms |
+| `buildPayload` | Build the cart payload from bundle state | `{ ok, items, lines, … }` | 500ms |
+| `transformCartRequest` | Rewrite the `/cart/add.js` request body | rebuilt request | 500ms |
+| `transformCartResponse` | Rewrite the cart response | synthesized response | 500ms |
+| `runPostAdd` | Post-add side effects (drawer, `after` hooks) | `void` | 1500ms |
+
+Every resolver receives `(ctx, next)`:
+
+| `ctx` field | Meaning |
+| --- | --- |
+| `bundleId` | Bundle being added |
+| `engine` | Live engine instance for that bundle |
+| `pageProductId` | Current PDP product GID, when on a product page |
+| `pdpCoupledSelectorIds` | Selectors coupled to the page product |
+| `trigger` | `"click"`, `"submit"`, `"full-page"`, or `"fallback"` |
+| `transport` | `"fetch"`, `"xhr"`, or `"internal"` |
+| `stage` | Fully-qualified stage name, e.g. `atcOverride:buildPayload` |
+| `form`, `selection`, `request`, `payload`, `response` | Populated from the stage onward |
+| `debug`, `log` | Debug flag and logger, both driven by `window.nameless.__overrideDebug` |
+
+`next()` runs the rest of the chain and ultimately Knit’s built-in behavior — call it and adjust, rather than reimplementing a stage. If your resolver throws, times out, or returns a shape the host rejects, the host records a warning and falls through to `next()`, so a broken resolver degrades to default behavior instead of breaking the cart.
+
+<Note>
+  Override is designed for a main `productSingle` product plus optional `collectionMulti` picks. Collection-only bundles are not a supported override shape.
+</Note>
+
+Branch the renderer footer on `snapshot.meta.atcOverride` — omit your own ATC button when it is `true`. See [Renderer function](/renderer-function#pdp-add-to-cart-override) and [Shopify integration](/shopify-integration#add-to-cart-override).

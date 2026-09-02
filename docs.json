@@ -20,7 +20,19 @@
       {
         "group": "Guides",
         "pages": [
-          "bundle-concepts",
+          {
+            "group": "Bundle concepts",
+            "pages": [
+              "bundle-concepts",
+              "widget",
+              "renderer-function",
+              "data-attributes",
+              "styling",
+              "plugin-hooks",
+              "resolver-stages",
+              "runtime-api"
+            ]
+          },
           "create-a-bundle",
           "shopify-integration"
         ]
@@ -83,6 +95,10 @@
     {
       "source": "/how-discounts-apply",
       "destination": "/shopify-integration"
+    },
+    {
+      "source": "/customize-the-widget",
+      "destination": "/widget"
     }
   ]
 }
