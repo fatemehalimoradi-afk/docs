@@ -63,6 +63,8 @@ Anything on `window.nameless` prefixed with `__` is an internal detail â€” donâ€
 - [ ] Tier buttons use hidden inputs, not an attribute on the button
 - [ ] ATC button rendered only when `meta.atcOverride` is false
 - [ ] Every snapshot string escaped; every merchant-visible string through `ctx.t` (and not escaped)
+- [ ] Prices read from the snapshot, formatted with `Intl`, and no discount math re-derived locally
+- [ ] Per-unit prices multiplied by `entry.quantity` wherever a line total is shown; footer taken from `totals`
 
 ### Styling
 

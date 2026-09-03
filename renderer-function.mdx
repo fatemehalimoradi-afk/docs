@@ -109,14 +109,31 @@ interface SelectionEntry {
   variantId: string;
   quantity: number;
   soldOut: boolean;
-  basePrice: number; // before discounts
-  finalPrice: number; // after discounts
-  cumulativePercentageDiscount: number;
-  appliedRewards: Array<{ id: string }>;
+  basePrice: number; // this entry's own price, per unit, before discounts
+  finalPrice: number; // per unit, after discounts (≤ basePrice)
+  cumulativePercentageDiscount: number; // not a sum — see the pricing rules below
+  appliedRewards: Array<{ id: string }>; // at most one: the reward that reduced this entry
 }
 ```
 
+The snapshot also carries `version: number` (the bundle's revision, used internally for cart stamping) — renderers have no reason to read it.
+
 All ids are Shopify GIDs. `Collection` is `{ id, handle, title, products: Product[] }` — `products` is populated for `collectionMulti` and empty for `collectionSingle`.
+
+## Pricing rules
+
+Prices are **per unit on every entry**, for every selector kind, and each entry carries its own — a `collectionMulti` row shows that product's price, not the selector's total. Multiply by `entry.quantity` yourself if you want a line total. Four rules beyond that:
+
+| Rule | What to do |
+| --- | --- |
+| **`cumulativePercentageDiscount` is not a sum.** At most one reward reduces an entry; the name is historical. It is `0` when that reward was a fixed amount and when nothing applied — `0` does **not** mean "no discount" | Show a percentage only when it's non-zero. To detect a discount at all, compare `basePrice` against `finalPrice` |
+| **The footer is the authoritative total.** `totals` sums at the line level, where the discount logic rounds; adding up per-unit prices × quantity yourself can drift a cent or two when a fixed amount splits unevenly | Take the footer figures from `totals`, not from your own sum of the rows |
+| **Money rewards are converted for display.** In a currency other than the shop's, the widget converts fixed amounts with the page's exchange rate; checkout re-reads that rate, so the two can differ by up to a cent per line | Present the widget total as the widget's figure; don't promise it matches checkout to the cent |
+| **Two-decimal currencies are assumed.** Rounding runs in integer cents, so zero-decimal (JPY, KRW) and three-decimal (KWD, BHD) currencies can be off by a fraction of a unit — a known open bug | Format with `Intl.NumberFormat(ctx.locale, { style: "currency", currency })` rather than hand-rolled decimals |
+
+An entry with nothing applied — including a row the shopper hasn't picked — reports its variant's unit price with an empty `appliedRewards`.
+
+Above all: never recompute a discount yourself from `conditionSets`. Discount math is shared with the checkout-side function; re-deriving it in a renderer will disagree with what the shopper is charged.
 
 ## Selector kinds
 
@@ -133,7 +150,7 @@ Reading recipes:
 - `collectionMulti`: for each product in `sel.collection.products`, find its state by matching `entry.productId === product.id` inside the array. Quantity `0` means unselected; on first load the array is empty, so every row shows `0`.
 - Never hardcode a starting quantity. The engine sets initial quantities from the bundle’s first condition set before the first render — display `entry.quantity`.
 - Never fetch collection members yourself; they arrive in the snapshot.
-- Show discounts by comparing `basePrice` vs `finalPrice` per row, and `totals.baseSubtotal` vs `totals.subtotal` in the footer.
+- Show discounts by comparing `totals.baseSubtotal` vs `totals.subtotal` in the footer, and `basePrice` vs `finalPrice` per row — see the [pricing rules](#pricing-rules) above.
 - Derive currency from the variant’s `currencyCode` or `totals.currencyCode`.
 - Handle `collectionSingle` with `resolvedProduct: null` — don’t invent a product.
 
@@ -142,6 +159,8 @@ Reading recipes:
 `snapshot.meta.atcOverride` is a merchant setting, not something the renderer controls. When it is `true`, the theme’s own add-to-cart button drives the bundle: the widget is mounted directly above it and the host intercepts the native click.
 
 **Branch your footer on it:** when `atcOverride` is `true`, omit your own ATC button entirely (the host strips stray `[data-nameless-atc]` nodes as a safety net). When it is `false`, render the button as usual.
+
+Trust the flag and nothing else. A bundle the merchant configured as a popup always arrives with `atcOverride: false`, because in that mode the theme button opens the popup and your button is the only way to add — the host rewrites the flag before your renderer sees it, so there is no popup case to special-case.
 
 See [Shopify integration](/shopify-integration#add-to-cart-override) and [Resolver stages](/resolver-stages).
 
