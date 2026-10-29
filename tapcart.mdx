@@ -5,7 +5,7 @@ description: "Add the Knit bundle widget to a Tapcart product page"
 
 This guide is for Tapcart App Studio. You do not need to write code or use the Tapcart CLI. Knit prepares and publishes the block; you add it to the product page and publish.
 
-Knit bundles on Tapcart use the **same active bundles** as your Shopify store. Add to cart goes to **Tapcart's native cart**. The Knit block attaches the discount info — no extra merchant step. The discount still applies in Shopify checkout. Keep the Knit automatic discount **Active** in Shopify admin → **Discounts**.
+Knit bundles on Tapcart use the **same bundles** as your Shopify store. Add to cart goes to **Tapcart's native cart**. The Knit block attaches the discount info — no extra merchant step. The discount still applies in Shopify checkout. Keep the Knit automatic discount **Active** in Shopify admin → **Discounts**.
 
 ```
 Your Tapcart app
@@ -83,14 +83,14 @@ Then complete a test order. Each bundle line in Shopify admin → **Orders** sho
 | --- | --- | --- |
 | Blank space | Endpoint not enabled, or block not pointing at the store | Contact Knit support |
 | Console: refused to connect | Tapcart WebView blocking the widget origin | Contact Knit support (Tapcart allowlist) |
-| Widget says no bundle | No active bundle matches this product | In Knit admin, include this product and set the bundle **Active** |
+| Blank space where the widget should be | No bundle matches this product | In Knit admin, include this product in a bundle and set it **Active** |
 | Knit Bundle not in My Blocks | Block not published to this app | Contact your Knit account manager |
 | Items in cart, no discount | Knit automatic discount inactive, or property stripped | Confirm **Discounts** is Active; see [Troubleshooting](/troubleshooting) |
 
-Bundle changes in Knit admin can take up to **5 minutes** to show in the app.
+Bundle changes in Knit admin can take up to about **6 minutes** to show in the app.
 
 <Note>
-  Placement is product page only in this version. The block does not replace Tapcart's native Add to Cart button. In the app, bundles sell one-time only (no subscription plans), and bundles shown as a popup or hidden on product pages don't appear. Your Shopify web storefront is unchanged.
+  Placement is product page only in this version. The block does not replace Tapcart's native Add to Cart button. In the app, bundles sell one-time only (no subscription plans), and bundles shown as a popup or hidden on product pages don't appear. **Draft** bundles do appear in the app, but get no discount at checkout — keep a bundle in Draft only while you're not live on Tapcart. **Show on → Selected products' pages** isn't applied in the app. Your Shopify web storefront is unchanged.
 </Note>
 
 ## CLI (optional)

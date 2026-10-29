@@ -28,17 +28,19 @@ A bundle shows on a product page when it is **Active**, its display is on (**Sho
 - an **every product** set
 - or the page is the bundle's own [Bundle as Product](#bundle-as-product) page
 
-With **Show on → Selected products' pages**, only the product sets you selected make the bundle show. When several bundles match, they show in **Display priority** order (lower first).
+With **Show on → Selected products' pages**, only the product sets you selected make the bundle show. A bundle is also skipped when no tier can be met with products the store can sell (console: `BUNDLE_UNSELLABLE`). When several bundles match, they show in **Display priority** order (lower first).
 
 ## Placing the widget
 
 Knit places each widget automatically, in this order:
 
 1. Where you placed the theme's app block for that bundle (see below).
-2. The bundle's **Widget position** — **Above** or **Below** the theme's add-to-cart button, or a **Custom element** by CSS selector.
+2. The bundle's **Custom element** selector, when its **Widget position** is relative to one.
 3. The store's **Default widget position** from **Settings**.
-4. Next to the theme's add-to-cart button, found automatically.
-5. The end of the product section. The console warns when this happens — set a widget position.
+4. The theme's add-to-cart button, found automatically.
+5. The end of the product section, or of the page if there is none. The console warns when this happens — set a widget position.
+
+**Above** or **Below** in the bundle's **Widget position** sets which side of the element the widget goes, in every step.
 
 If the theme redraws the product section, Knit puts the widget back. Several widgets on the same spot stack in priority order, with a 16px gap your theme can change with the CSS variable `--nameless-bundle-gap`.
 
@@ -69,9 +71,9 @@ With **Display as → Pop-up**, the widget opens in a dialog when the shopper cl
 With the theme button:
 
 - Knit intercepts the theme's add-to-cart once the widget has drawn, and adds the bundle's lines.
-- The theme form's variant and quantity feed the product set for the page's product. A quantity of N adds N bundles, each discounted on its own.
+- The theme form's variant and quantity feed the product set for the page's product. On a Bundle as Product page, a quantity of N adds N bundles, each discounted on its own.
 - The widget draws no add-to-cart button of its own.
-- One bundle per page takes the theme button: the first in priority order.
+- One bundle per page takes the theme button: the first in priority order. Other bundles that would take it aren't shown.
 - It works best for **a main product plus optional picks**. A bundle made only of a collection list isn't supported.
 - After the add, the theme's cart drawer opens.
 

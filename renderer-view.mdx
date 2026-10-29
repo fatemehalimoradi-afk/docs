@@ -229,7 +229,7 @@ When it is set, draw one plan `<select>` per picked item whose chosen variant ha
 - Draw no control for a variant with empty `plans`.
 - The selection's prices already reflect the chosen plan.
 
-**One shared plan control** is the alternative, for a design that asks for one subscription choice for the whole bundle. Use it only while `view.subscriptions.sharedPlanOffered` is true — the engine sets it when every selector draws one fixed product on this page.
+**One shared plan control** is the alternative, for a design that asks for one subscription choice for the whole bundle. Use it only while `view.subscriptions.sharedPlanOffered` is true — the engine sets it when every selector draws one fixed product on this page and no selector is picked unit by unit.
 
 | Field | Meaning |
 | --- | --- |
@@ -406,6 +406,7 @@ var loadMore =
 One card per tier. The card carries only the tier id; the engine works out the quantities. Names come from `requirements`, sentences from `outcome`, prices from `ifChosen`, and what's missing from `toAdd`. `heading` is the helper from the [minimal example](/renderer-function#minimal-example).
 
 ```js
+// `heading` must guard an empty `products` list in real code.
 function headingOf(selectorId) {
   for (var i = 0; i < v.selectors.length; i++) {
     if (v.selectors[i].id === selectorId) return heading(v.selectors[i]);

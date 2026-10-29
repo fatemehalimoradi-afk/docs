@@ -14,7 +14,7 @@ Controls inside a disabled `<fieldset>`, or carrying `disabled` or `aria-disable
 | `data-nameless-variant-selector` | `<select>` | `selector.id` | On `change`, picks the variant in `select.value` |
 | `data-nameless-option-selector` | `<select>` | `selector.id` | On `change`, picks one option value (see [option dropdowns](#option-dropdowns)) |
 | `data-nameless-option-name` | the same `<select>` | `option.name`, e.g. `Size` | Says which option the dropdown is |
-| `data-nameless-unit` | the same `<select>` | the unit's index | Which unit it picks for. Required when `selector.unitPicks` is set |
+| `data-nameless-unit` | the same `<select>` | the unit's index | Names the unit it picks for. Without it, the pick applies to every unit of the row |
 | `data-nameless-qty-selector` | input or button (see [patterns](#quantity-and-tier-patterns)) | `selector.id` | Sets a quantity; the behavior follows the element type and structure |
 | `data-nameless-product-id` | each control on a collection row | `product.id` | Says which product of the collection changed. Required on collection rows |
 | `data-nameless-tier-id` | any element that stands for one tier | `tier.id` | On `click`, chooses that tier |
@@ -33,7 +33,7 @@ The value of `data-nameless-qty-selector` is always the selector id. The runtime
 
 | Pattern | Markup | Behavior |
 | --- | --- | --- |
-| **Number input** | `<input type="number" min="0" step="1" data-nameless-qty-selector="{selector.id}">` | On `change`, sets the quantity to `Number(value)`. Invalid or empty falls back to `min` or `1` |
+| **Number input** | `<input type="number" min="0" step="1" data-nameless-qty-selector="{selector.id}">` | On `change`, sets the quantity to the whole number in the field. An empty or invalid value sets the larger of `min` and `1` |
 | **Quantity card** | `<button type="button" data-nameless-qty-selector="{selector.id}" value="{qty}">` | On `click`: if the quantity already equals `value`, sets `0` (toggle off); otherwise sets `value`. Set `aria-pressed` yourself for styling — the runtime doesn't read it |
 | **Optional add-on** | One checkbox **and** one number input with the same selector id (and the same product id on collection rows) | Unchecking sets `0` and remembers the number; checking restores it. Editing the number while unchecked only updates the remembered value |
 | **Tier control** | Any element with `data-nameless-tier-id="{tier.id}"` — a card, a button, a row | On `click`, chooses the tier. The engine makes the smallest change to the picks that meets it. Set `aria-pressed="true"` when `tier.state === "applied"` |
@@ -68,7 +68,7 @@ The alternative to one variant `<select>`: one `<select>` per entry in `product.
 - `<option value>` is the **option value**, not a variant id. Mark selected what `selector.optionPicks` holds.
 - On `change`, the engine merges the pick over `optionPicks` and sets the selection to the one variant carrying every picked value, or to none.
 - Use one shape per selector — never both a variant selector and option selectors on the same `<select>`.
-- When `selector.unitPicks` is set, draw one line of option dropdowns per unit and add `data-nameless-unit="{index}"` to each.
+- When `selector.unitPicks` is set, draw one line of option dropdowns per unit and add `data-nameless-unit="{index}"` to each. A dropdown without it picks for every unit of the row.
 - Option dropdowns are for one-product selectors (a product selector, or a collection selector with `asPageProduct: true`). The option change carries no product id, so on collection rows use a variant `<select>` instead.
 
 ## Placement rules
@@ -76,6 +76,7 @@ The alternative to one variant `<select>`: one `<select>` per entry in `product.
 - **One-product selectors** (`itemType: "product"`, or a collection selector with `asPageProduct: true`): one variant `<select>` (or one set of option dropdowns) and one quantity control per selector, and **no** `data-nameless-product-id`.
 - **Collection rows** (`itemType: "collection"`, `asPageProduct: false`): every variant select, quantity input, checkbox, card, and plan select on a row carries **both** the selector id and `data-nameless-product-id="{product.id}"`.
 - In a variant `<select>`, each `<option value>` is the variant id. The runtime reads `select.value` as is.
+- Changing the variant `<select>` of an **unpicked** collection row picks that product with quantity 1.
 - On a collection row you don't need to send a variant when the quantity moves up from `0`. The runtime takes it from the existing selection or the product's `defaultVariantId`.
 - Pair exactly one checkbox with one number input per add-on — never two number inputs for the same selector and product.
 - A batch button needs at least two hidden inputs, with distinct selector ids.
@@ -95,4 +96,4 @@ Draw these only when `view.subscriptions` is not `null`:
 - **Per item (default):** one `<select data-nameless-selling-plan-selector="{selector.id}">` per picked item whose chosen variant has plans. Each `<option value>` is a plan id from **that item's own chosen variant** (`variant.plans[].id`); the one-time option is `value=""`. Add `data-nameless-product-id` on collection rows.
 - **Shared (alternative):** one `<select data-nameless-selling-plan-group-selector>` whose `<option value>` is a group name from `view.subscriptions.sharedGroups`, only while `sharedPlanOffered` is true. Never both kinds of control.
 
-The rules for each are on [Renderer view](/renderer-view#subscriptions).
+A selector picked unit by unit (`unitPicks` set) can't take a per-item plan. The rules for each are on [Renderer view](/renderer-view#subscriptions).

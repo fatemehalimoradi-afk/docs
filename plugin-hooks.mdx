@@ -20,7 +20,7 @@ window.nameless.use({
 });
 ```
 
-`use()` returns an unsubscribe function. You can call it before the runtime has installed: a pre-install shim queues plugins and replays them at install, so script order doesn't matter. `window.nameless.ready` resolves once bundles are loaded, if you need to wait for state rather than just register.
+`use()` returns an unsubscribe function. You can call it before the runtime has installed: a pre-install shim queues plugins and replays them at install, so script order doesn't matter. A plugin registered before install can't be removed afterwards. `window.nameless.ready` resolves once bundles are loaded, if you need to wait for state rather than just register.
 
 Plugins are global: they run for every bundle on the page. Branch on `ctx.bundleId` when a hook is for one bundle.
 
@@ -49,20 +49,18 @@ A block ends the add with dispatch code `PLUGIN_BLOCKED` and the message `"{code
 `lineProperties` are keyed by **selector id** and land on every cart line of that selector as Shopify line-item `properties`. Multiple hooks merge; later hooks win per key. Prefix a key with `_` to keep it hidden from the shopper on themes that hide underscore properties.
 
 <Warning>
-  Don't set `__FB_ATC_UID`. Knit writes it on each bundle line after your hooks run, so your value is replaced, and the Shopify discount function needs Knit's value to find the bundle.
+  Never set `__FB_ATC_UID`. Knit writes it after your hooks run on every line a tier priced, replacing yours; on any other line your value would reach checkout and confuse the discount function.
 </Warning>
 
 ## `addToCart.after`
 
-Fire-and-forget, after the cart responds. Same context plus `result`:
+Runs only after a **successful** add — never after a block, a failed validation, or a cart refusal. It is awaited: the cart drawer opens, and `dispatch("addToCart")` resolves, only after every `after` hook returns (each still capped at 1500ms). Same context plus `result`:
 
 ```ts
-result:
-  | { ok: true; lines: Array<{ selectorId, variantId, quantity, sellingPlanId? }> }
-  | { ok: false; code: string; message: string };
+result: { ok: true; lines: Array<{ selectorId, variantId, quantity, sellingPlanId? }> };
 ```
 
-Return nothing, or `{ warnings: string[] }` to add messages to the host's warning log. You can't change the outcome from here.
+Return nothing, or `{ warnings: string[] }`. Warnings come back on the add-to-cart result as `pluginWarnings`. You can't change the outcome from here.
 
 ## Execution semantics
 

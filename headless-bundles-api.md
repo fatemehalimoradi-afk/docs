@@ -53,10 +53,10 @@ Returns the shop's bundles as normalized JSON: resolved products, offers with th
 | Parameter | Required | Description |
 | --- | --- | --- |
 | `shop` | **Yes** | Your `{store}.myshopify.com` domain |
-| `product_id` | No | Shopify product ID (numeric or GID). Returns only the bundles that apply to that product — a product match, collection membership, or the bundle's own [Bundle as Product](/shopify-integration#bundle-as-product) page. Omit it to get every bundle |
+| `product_id` | No | Numeric Shopify product ID (not a GID — a GID silently stops product sets from matching). Returns only the bundles that apply to that product — a product match, collection membership, or the bundle's own [Bundle as Product](/shopify-integration#bundle-as-product) page. Omit it to get every bundle |
 | `handle` | No | Return only the bundle with this handle |
 | `type` | No | Omit. The default is the current bundle type |
-| `language` | No | Storefront language code (`EN`, `DE`, `PT-BR`) for translated titles and `@inContext` pricing. Also limits `translations` to that language |
+| `language` | No | Storefront language code (`EN`, `DE`, `PT-BR`) for translated titles and `@inContext` pricing. Also limits `translations` to that language, its base language, the shop's default language, and English |
 | `country` | No | Storefront country code (`US`, `DE`) for market pricing |
 
 ### Example
@@ -178,7 +178,8 @@ The example is trimmed: the bundle's `type` field and the optional top-level `sh
 
 ### Response notes
 
-- **Bundles are not filtered by status.** Skip a bundle whose `isActive` is false, and one whose `pdpDisplay.isActive` is `"false"` (the merchant hid it on product pages).
+- **Bundles are not filtered by status.** Skip a bundle whose `isActive` is false (a Draft gets no checkout discount), and one whose `pdpDisplay.isActive` is `"false"` (the merchant hid it on product pages).
+- **Show on → Selected products' pages is not applied**, and Bundle as Product products can still appear in other bundles' collections. Apply your own rules if you need them.
 - **`pdpDisplay` scalars are strings** (`"true"`, `"1"`). Read `jsUrl`/`cssUrl` first; fall back to `pdpDisplay.assets`, then the bundle-level `assets`.
 - **IDs:** product and variant IDs are numeric strings (GID stripped). A collection's `id` is a full GID — pass it as is to [collection-products](#more-of-a-collections-products).
 - **Excluded variants** (`excludedVariantIds`) are already removed from a selector's products.
@@ -209,7 +210,7 @@ Successful responses are sent with:
 Cache-Control: public, max-age=60, stale-while-revalidate=300
 ```
 
-Bundle changes can take up to about 5 minutes to reach clients through caches.
+Bundle changes can take up to about 6 minutes to reach clients through caches.
 
 ---
 
@@ -234,7 +235,8 @@ Returns a self-contained HTML page that loads the Knit widget runtime, fetches t
 
 ### What the embed renders
 
-- Every bundle that applies to the product, except those hidden on product pages and those shown as a popup.
+- Every bundle that applies to the product, except those hidden on product pages and those shown as a popup. **Draft bundles are included** and get no discount at checkout.
+- **Show on → Selected products' pages** is not applied: any product set can make a bundle show.
 - One-time purchases only: subscription plans are not offered in the embed.
 - Always the widget's own add-to-cart button. The theme-button override doesn't apply.
 
@@ -447,7 +449,7 @@ interface Bundle {
 }
 
 interface PdpDisplay {
-  id: string;
+  id: string | null;
   isActive: string;              // "false" ⇒ hidden on product pages
   priority: string | null;       // lower = shown first
   isPopup: string;
@@ -458,7 +460,7 @@ interface PdpDisplay {
   jsUrl: string | null;
   cssUrl: string | null;
   params: unknown;
-  customCss: string;
+  customCss: string | null;
   styleVars: unknown;
   assets: Asset[];
 }

@@ -21,7 +21,7 @@ window.nameless.defineRenderer(
 | Rule | Why |
 | --- | --- |
 | Pass `{ viewVersion: 2 }` | A script with no version is never run. The host logs `RENDERER_VIEW_VERSION_MISSING` and leaves the theme's page as it was |
-| Call it at the top level, unguarded | Registration is matched to the loading bundle through `document.currentScript`. A call inside `DOMContentLoaded`, `setTimeout`, or a condition registers against nothing |
+| Call it at the top level, unguarded | Registration is matched to the loading bundle through `document.currentScript`. A call deferred into `DOMContentLoaded`, `setTimeout`, a promise, or any other callback registers against nothing |
 | Call it once | One script registers one renderer |
 
 The renderer is registered under the file URL the bundle names, so two bundles that point at the same file share one download. A bundle with no JS code is not drawn; the theme's page stays as it is.
@@ -129,7 +129,8 @@ window.nameless.defineRenderer(
         .replace(/"/g, "&quot;");
     }
     function heading(sel) {
-      return sel.itemType === "collection" ? sel.collection.title : sel.products[0].title;
+      if (sel.itemType === "collection") return sel.collection.title;
+      return sel.products[0] ? sel.products[0].title : "";
     }
     function variantOf(product, id) {
       for (var i = 0; i < product.variants.length; i++) {
@@ -232,7 +233,7 @@ The host logs structured codes prefixed with `[nameless]`:
 | `RENDERER_LOAD_ERROR` | The CSS fetch or the JS `<script>` failed | The widget does not render for that bundle |
 | `RENDERER_VIEW_VERSION_MISSING` | The script declared no `viewVersion`, or never registered | The widget is not run; the theme's page is shown |
 | `RENDERER_VIEW_UNSUPPORTED` | The declared version is one the engine does not build | The widget is not run; the theme's page is shown |
-| `RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` element on the page | The renderer is never called |
+| `RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` mount for this bundle on the page | The renderer is never called |
 
 If the CSS fails, the JS is not run, so treat both assets as required. Stay defensive anyway: guard against empty `selectors`, empty `products`, empty `selections`, `null` images, and `null` money. Write semantic, labelled markup so the widget still works if styling fails.
 

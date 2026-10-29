@@ -30,9 +30,11 @@ Use this page when the widget is missing, add-to-cart fails, or checkout doesn't
 | Headless JSON `NOT_FOUND` | Headless not enabled on this deployment | Contact Knit support |
 | Console `[nameless] RENDERER_THREW` | The renderer threw | Fix the JS code. The last successful paint stays. See [Renderer function](/renderer-function#when-things-go-wrong) |
 | Console `[nameless] RENDERER_LOAD_ERROR` | CSS fetch or JS `<script>` failed | Treat both as required. The widget doesn't render |
-| Console `[nameless] RENDERER_VIEW_VERSION_MISSING` or `RENDERER_VIEW_UNSUPPORTED` | The JS code doesn't declare `{ viewVersion: 2 }` | Ask the assistant to regenerate the widget, or fix the `defineRenderer` call |
+| Console `[nameless] RENDERER_VIEW_VERSION_MISSING` | The JS code declares no view version | Ask the assistant to regenerate the widget, or pass `{ viewVersion: 2 }` to `defineRenderer` |
+| Console `[nameless] RENDERER_VIEW_UNSUPPORTED` | The JS code declares a view version the engine doesn't build | Ask the assistant to regenerate the widget, or declare `{ viewVersion: 2 }` |
 | Console `[nameless] RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` on the page | Turn on the app embed |
-| Admin preview: "This renderer is out of date" | Same as `RENDERER_VIEW_UNSUPPORTED` | Ask the assistant to regenerate it |
+| Admin preview: "This renderer is out of date" | Same as `RENDERER_VIEW_VERSION_MISSING` | Ask the assistant to regenerate it |
+| Admin preview: "This renderer can't be shown" | Same as `RENDERER_VIEW_UNSUPPORTED` | Ask the assistant to regenerate it |
 
 ## Add to cart fails
 
@@ -67,7 +69,7 @@ Items land in the cart at full price when the bundle's tag never reaches Shopify
 
 Other causes:
 
-- **The cart changed after the add.** If the shopper lowers a quantity below the tier's condition, the tier no longer holds. Units above a condition's maximum pay full price by design.
+- **The cart changed after the add.** If the shopper lowers a quantity below the tier's condition, the tier no longer holds. Raising it in the cart doesn't move the bundle up a tier: checkout starts from the tier tagged at add-to-cart and only tries lower ones. Units above a condition's maximum pay full price by design.
 - **The bundle was edited after the add.** Checkout uses the bundle's current settings. If the tier the cart was tagged with was deleted, or its condition changed, the discount follows the new settings.
 - **The discount only covers some units.** A "buy X, get Y" reward discounts only Y units, cheapest first.
 
