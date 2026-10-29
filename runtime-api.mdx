@@ -3,68 +3,116 @@ title: "Runtime API"
 description: "Read bundle state from outside the widget, debug, and ship"
 ---
 
-Theme scripts and plugins — **never renderers** — can talk to the runtime directly.
+Theme scripts and plugins — **never renderers** — can talk to the runtime on `window.nameless`.
 
 <Warning>
-  Prefer the [data attributes](/data-attributes) over `dispatch`. Quantity, variant, selection, and add-to-cart all have a supported path already: put the right `data-nameless-*` attribute on the right element and let the runtime drive it. That path is the contract we test and keep stable.
+  Prefer the [data attributes](/data-attributes) over `dispatch`. Every interaction already has a supported path: put the right `data-nameless-*` attribute on the right element and let the runtime drive it. That path is the contract we test and keep stable.
 
-  Inside a renderer, `dispatch` is **forbidden outright** — no exceptions. In other scripts, treat it as a last resort for cases the attributes genuinely can’t express (e.g. a bundle driven from an unrelated part of the page). Reading state with `subscribe` carries none of these caveats.
+  Inside a renderer, `dispatch` is **forbidden outright**. In other scripts, treat it as a last resort for cases the attributes can't express — for example, a bundle driven from an unrelated part of the page. Reading state with `subscribe` carries none of these caveats.
 </Warning>
 
-```js
-window.nameless.subscribe("bundles", function (snapshots) {
-  // called on every state change, with every mounted bundle
-});
+## Global surface
 
-var result = window.nameless.dispatch("quantityChange", {
-  bundleId: "…",
-  selectorId: "…",
-  quantity: 2,
+| Member | Notes |
+| --- | --- |
+| `ready` | `Promise<void>` that resolves once bundles are loaded |
+| `subscribe("bundles", cb)` | Reads the views of drawn bundles. Returns an unsubscribe function |
+| `snapshot` | The view each drawn bundle was last handed (`RendererView[]`) |
+| `dispatch(type, payload)` | Changes a bundle's picks or adds it to the cart |
+| `use(plugin)` | Registers [plugin hooks](/plugin-hooks) and [resolver stages](/resolver-stages) |
+| `override` | `{ bundleId }` of the bundle bound to the theme's add-to-cart button, when one is |
+| `registerShopThemeScript(handlers)` | A shop's cart-drawer script — see [Shopify integration](/shopify-integration#after-add-to-cart) |
+
+Anything on `window.nameless` prefixed with `__` is internal — don't build against it. A pre-install shim queues `subscribe` and `use` until the runtime installs, so script order doesn't matter.
+
+## Reading state
+
+```js
+window.nameless.subscribe("bundles", function (views) {
+  // called at once, then whenever a bundle is drawn or leaves the page
 });
+```
+
+`views` holds the [view](/renderer-view) each drawn bundle was last handed — the same objects as `window.nameless.snapshot`. `"bundles"` is the only topic. A bundle no widget draws is not listed. Branch on `view.viewVersion`.
+
+You read views, never engine state or the bundle's rules.
+
+## Dispatch actions
+
+```js
+var result = window.nameless.dispatch("chooseTier", { bundleId: "…", tierId: "…" });
 
 var atc = await window.nameless.dispatch("addToCart", { bundleId: "…" });
 ```
 
-| Action | Payload | Returns |
-| --- | --- | --- |
-| `quantityChange` | `{ bundleId, selectorId, quantity, productId?, variantId? }` | `DispatchResult` |
-| `variantChange` | `{ bundleId, selectorId, variantId, productId? }` | `DispatchResult` |
-| `selectionPlanChange` | `{ bundleId, changes: SelectionChange[] }` | `DispatchResult` |
-| `addToCart` | `{ bundleId }` | `Promise<AddToCartResult>` |
+| Action | Payload | Returns | Attribute equivalent |
+| --- | --- | --- | --- |
+| `quantityChange` | `{ bundleId, selectorId, quantity, productId?, variantId? }` | `DispatchResult` | `data-nameless-qty-selector` |
+| `variantChange` | `{ bundleId, selectorId, variantId, productId? }` | `DispatchResult` | `data-nameless-variant-selector` |
+| `optionChange` | `{ bundleId, selectorId, name, value, unit? }` | `DispatchResult` | `data-nameless-option-selector` |
+| `chooseTier` | `{ bundleId, tierId }` | `DispatchResult` | `data-nameless-tier-id` |
+| `selectionPlanChange` | `{ bundleId, changes: SelectionChange[] }` | `DispatchResult` | batch button |
+| `sellingPlanChange` | `{ bundleId, selectorId, sellingPlanId, productId? }` | `DispatchResult` | `data-nameless-selling-plan-selector` |
+| `sellingPlanGroupChange` | `{ bundleId, groupName }` | `DispatchResult` | `data-nameless-selling-plan-group-selector` |
+| `loadMoreProducts` | `{ bundleId, selectorId }` | `Promise<DispatchResult>` | `data-nameless-load-more` |
+| `addToCart` | `{ bundleId }` | `Promise<AddToCartResult>` | `data-nameless-atc` |
 
-Every row above has an attribute equivalent — see [Data attributes](/data-attributes). Reach for the attribute first.
+```ts
+type DispatchResult = { ok: true } | { ok: false; code: string; message: string };
 
-`"bundles"` is the only subscribe topic. Before the runtime installs, dispatch returns `{ ok: false, code: "NOT_READY" }`.
+type AddToCartResult =
+  | { ok: true; lines: Array<{ selectorId; variantId; quantity; sellingPlanId? }> }
+  | {
+      ok: false;
+      code: string;
+      message: string;
+      shopperMessage?: string; // the cart's own sentence, already in the shopper's language
+      invalid?: Array<{ selectorId: string; reason: string }>;
+    };
+```
 
-Failure codes you may see: `NOT_READY`, `UNKNOWN_ACTION`, `INVALID_PAYLOAD`, `INVALID_QUANTITY`, `UNKNOWN_BUNDLE`, `UNKNOWN_SELECTOR`, `UNKNOWN_VARIANT`, `WRONG_SELECTOR_KIND`, `EMPTY_SELECTION`, `VARIANT_UNAVAILABLE`, `SOLD_OUT`, `CART_HTTP_ERROR`, `CART_REJECTED`, `PLUGIN_BLOCKED`, `HANDLER_THREW`.
+Behavior worth knowing:
 
-Anything on `window.nameless` prefixed with `__` is an internal detail — don’t build against it.
+- **`chooseTier`** is the whole message: the engine makes the smallest change to the picks that meets the tier. It refuses with `TIER_NOT_CHOOSABLE` when the tier still wouldn't apply (its `ifChosen` is `null`). One chosen tier per offer: choosing one replaces the offer's choice, choosing it again clears it, and any change that stops it applying drops it.
+- **`selectionPlanChange`** sets several picks at once and keeps the chosen tier while the picks still meet it. To also choose a tier, send `chooseTier` next.
+- **`sellingPlanChange`** sets one item's plan; `sellingPlanId: null` means one-time. Refused while `view.subscriptions` is `null`, and for a plan the chosen variant isn't sold on.
+- **`sellingPlanGroupChange`** puts every selected item on one selling-plan group, each resolving its own plan in it; `groupName: null` means one-time. Groups match by name, since plan ids differ per variant. Refused while `view.subscriptions` is `null`, with `WRONG_SELECTOR_KIND` unless `sharedPlanOffered`, and whole with `GROUP_NOT_SHARED` when any selected item can't be bought on that group.
+- Before the runtime installs, every action returns `{ ok: false, code: "NOT_READY" }`.
+
+Failure codes: `NOT_READY`, `UNKNOWN_ACTION`, `INVALID_PAYLOAD`, `INVALID_QUANTITY`, `UNKNOWN_BUNDLE`, `UNKNOWN_SELECTOR`, `UNKNOWN_VARIANT`, `UNKNOWN_TIER`, `TIER_NOT_CHOOSABLE`, `HANDLER_THREW`, `EMPTY_SELECTION`, `VARIANT_UNAVAILABLE`, `SOLD_OUT`, `CART_HTTP_ERROR`, `CART_REJECTED`, `PLUGIN_BLOCKED`, `WRONG_SELECTOR_KIND`, `UNKNOWN_SELLING_PLAN`, `SUBSCRIPTIONS_DISABLED`, `GROUP_NOT_SHARED`, `UNKNOWN_UNIT`, `LOAD_FAILED`.
 
 ## Debugging
 
 | Task | How |
 | --- | --- |
 | See host diagnostics | Console messages prefixed `[nameless]` |
-| Trace PDP override | Set `window.nameless.__overrideDebug = true` before adding to cart |
-| Preview a draft bundle | Append `?nameless_preview=true` to the storefront URL |
+| Trace the theme-button override | Set `window.nameless.__overrideDebug = true` before adding to cart |
+| Preview an inactive bundle | Append `?nameless_preview=true` to the product page URL. Preview skips the browser cache and sends no analytics. The checkout discount only covers **Active** bundles, so a previewed bundle adds at full price |
+| Measure load timing | `performance.getEntriesByType("measure")` — entries `nameless:time-to-data`, `nameless:time-to-first-mount`, `nameless:time-to-first-render`, `nameless:paint` |
 | Confirm the widget mounted | Look for `[data-nameless-block]` and `[data-nameless-widget="{id}"]` |
 | Inspect current state | `window.nameless.subscribe("bundles", console.log)` |
+
+Codes the host logs with the `[nameless]` prefix: `BOOT_BUNDLES_NOT_ARRAY`, `NORMALIZE_FAILED`, `ENGINE_CREATE_FAILED`, `DISPATCH_UNKNOWN_BUNDLE`, `RENDERER_MOUNT_NOT_FOUND`, `RENDERER_THREW`, `RENDERER_LOAD_ERROR`, `RENDERER_VIEW_VERSION_MISSING`, `RENDERER_VIEW_UNSUPPORTED`, `PLUGIN_BLOCKED`, `CART_HTTP_ERROR`, `CART_REJECTED`, `CART_DRAWER_STEP_FAILED`.
 
 ## Pre-ship checklist
 
 ### Renderer
 
-- [ ] `defineRenderer` called once, at top level, unguarded
-- [ ] Repaints entirely from `snapshot` on every call; no cached nodes, no accumulated state
+- [ ] `defineRenderer(fn, { viewVersion: 2 })` called once, at top level, unguarded
+- [ ] Reads only `ctx.view` (plus `ctx.t`, `ctx.locale`, `ctx.productUrl`, `ctx.collectionUrl`) and paints with `ctx.paint(html)`
+- [ ] Rebuilds everything from the view on every call; no cached nodes, no accumulated state
+- [ ] Every repeated element has an `id` built from `view.bundleId` and its own id
 - [ ] No listeners, no `dispatch`, no `fetch`, no globals
-- [ ] Branches on all three `sel.kind` values, including `collectionSingle` with no resolved product
-- [ ] Variant `<option value>` is the variant id; qty controls show `entry.quantity`
-- [ ] `collectionMulti` controls carry both the selector id and `data-nameless-product-id`
-- [ ] Tier buttons use hidden inputs, not an attribute on the button
-- [ ] ATC button rendered only when `meta.atcOverride` is false
-- [ ] Every snapshot string escaped; every merchant-visible string through `ctx.t` (and not escaped)
-- [ ] Prices read from the snapshot, formatted with `Intl`, and no discount math re-derived locally
-- [ ] Per-unit prices multiplied by `entry.quantity` wherever a line total is shown; footer taken from `totals`
+- [ ] No money arithmetic, no counting, no eligibility logic: prices are `Money.text`, counts are `summary.unitCount`, tier facts come from `view.tiers`
+- [ ] Branches on `itemType` and `type`; a collection selector with `asPageProduct` is drawn like a product selector, without `data-nameless-product-id`
+- [ ] Handles empty `products`, empty `selections`, `null` images, and `null` money
+- [ ] Unpicked products show their `defaultVariantId` variant; quantities shown are `selection.quantity`
+- [ ] Collection rows carry both the selector id and `data-nameless-product-id`; a load-more button follows them while `moreProducts` is not `none`
+- [ ] Tier controls carry only `data-nameless-tier-id`, are drawn as controls only when `ifChosen` is set or the tier is chosen, and every rung of a ladder has its own
+- [ ] Tier names come from `requirements` with counts as `ctx.t` variables; reward sentences from `outcome`
+- [ ] Add-to-cart button only when `themeButtonAdds` is false, with its disabled, busy, and error states drawn from `view.addToCart`
+- [ ] No plan control while `view.subscriptions` is null; per-item plans from each item's own variant; no plan preselected
+- [ ] Every view string escaped; every word you write through `ctx.t` (and not escaped); existing `ctx.t` literals unchanged
 
 ### Styling
 
@@ -77,7 +125,7 @@ Anything on `window.nameless` prefixed with `__` is an internal detail — don�
 
 - [ ] `before` hooks return within 1500ms, or tolerate being cut off
 - [ ] Blocks use a meaningful `code` and a shopper-readable `message`
-- [ ] `lineProperties` keyed by selector id; `__FB_ATC_UID` left untouched
+- [ ] `lineProperties` keyed by selector id; `__FB_ATC_UID` left alone
 - [ ] Resolvers call `next()` and adjust, rather than replacing a stage wholesale
 - [ ] No `dispatch` calls that a `data-nameless-*` attribute could have handled
-- [ ] Hook failures verified to leave the shopper’s add-to-cart working
+- [ ] Hook failures verified to leave the shopper's add-to-cart working

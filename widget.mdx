@@ -3,15 +3,19 @@ title: "Widget"
 description: "The renderer, CSS, and plugins are how a bundle appears and behaves"
 ---
 
-A Knit bundle is product sets, conditions, rewards, **and** the widget. The first three decide who qualifies and what is discounted. The widget is how that offer looks and behaves on the storefront.
+A Knit bundle is product sets, offers, conditions, rewards, **and** the widget. The logic decides who qualifies and what is discounted. The widget is how that offer looks and behaves on the storefront.
 
-You write it in the same editor: the bundle’s **Renderer** (JS) and **Stylings** (CSS) assets, plus (optionally) a script you load on the storefront. You do not need repository access.
+- **Bundles from a bundle type** use a built-in widget. You change it from the form's **Style** panel and **Custom CSS** — no code needed.
+- **Bundle Engine bundles** have their own widget code: **JS code** (the renderer) and **CSS code**, under **Display options → Product detail page → Code**. The AI writes them; you can edit them. You don't need repository access.
 
-See [how the pieces connect](/bundle-concepts) for product sets, conditions, and rewards.
+The pages in this section are the contract that code follows. See [how the pieces connect](/bundle-concepts) for the logic side.
 
 <CardGroup cols={2}>
   <Card title="Renderer function" icon="code" href="/renderer-function">
-    Paint the widget HTML from bundle state.
+    Register a renderer and paint the widget from the view.
+  </Card>
+  <Card title="Renderer view" icon="table-list" href="/renderer-view">
+    Selectors, tiers, prices, and add-to-cart state — everything you draw.
   </Card>
   <Card title="Data attributes" icon="hand-pointer" href="/data-attributes">
     The interaction contract the runtime wires after each render.
@@ -23,7 +27,7 @@ See [how the pieces connect](/bundle-concepts) for product sets, conditions, and
     Gate, annotate, or observe add-to-cart.
   </Card>
   <Card title="Resolver stages" icon="shuffle" href="/resolver-stages">
-    Wrap the PDP add-to-cart override pipeline.
+    Wrap the pipeline that lets the theme's button add the bundle.
   </Card>
   <Card title="Runtime API" icon="terminal" href="/runtime-api">
     Read state from outside the widget, plus debugging.
@@ -34,40 +38,43 @@ See [how the pieces connect](/bundle-concepts) for product sets, conditions, and
 
 | Extension point | What it is | Where it lives |
 | --- | --- | --- |
-| **Renderer function** | JavaScript that paints the widget HTML from bundle state | Bundle’s **JS asset** (admin) |
-| **Stylings** | CSS for the markup your renderer emits | Bundle’s **CSS asset** (admin) |
-| **Plugin hooks** | JS that observes, blocks, or annotates add-to-cart | Any storefront script you load, including the **JS asset** |
-| **Resolver stages** | JS that reshapes the PDP add-to-cart override pipeline | Same storefront script |
+| **Renderer function** | JavaScript that paints the widget HTML from the view | The bundle's **JS code** |
+| **Styling** | CSS for the markup your renderer emits | The bundle's **CSS code** |
+| **Plugin hooks** | JavaScript that observes, blocks, or annotates add-to-cart | Any storefront script you load |
+| **Resolver stages** | JavaScript that reshapes the theme-button add-to-cart pipeline | Any storefront script you load |
 
 The renderer and CSS are **per bundle**. Plugins and resolvers are **global** to the page and see every bundle on it.
 
-In the editor, product sets are what shoppers pick from. In the snapshot they appear as **selectors**:
-
-| Editor | Snapshot `kind` |
-| --- | --- |
-| Single Product | `productSingle` |
-| Single Product (Collection-backed) | `collectionSingle` |
-| Shopify Collection | `collectionMulti` |
+The renderer draws, the engine decides. Prices, tier states, and what is missing all arrive already worked out in the [view](/renderer-view); the renderer computes none of it.
 
 ## How the page boots
 
 ```
-theme block renders a mount element  [data-nameless-block]
+app embed / app block renders a mount element   [data-nameless-block]
         │
-        ├─ bundle data published to  window.nameless.bundles
-        ├─ CSS asset fetched once → injected as a scoped <style>
-        └─ JS asset loaded once via <script src> → your script calls
-                 window.nameless.defineRenderer(fn)
+        ├─ bundle data for this page is published to the runtime
+        ├─ CSS code fetched once → injected as a scoped <style>
+        └─ JS code loaded once via <script src> → your script calls
+                 window.nameless.defineRenderer(fn, { viewVersion: 2 })
         │
-runtime installs on window.nameless  (dispatch / subscribe / use)
+runtime installs on window.nameless  (subscribe / dispatch / use)
         │
-on every state change:  fn({ snapshot, container, locale, t })
+on every state change:  fn({ view, container, paint, locale, t, … })
         │
-after every render: runtime attaches delegated listeners for the
-                    data-nameless-* attributes in your HTML
+after every paint: the runtime's delegated listeners act on the
+                   data-nameless-* attributes in your HTML
 ```
 
 Two consequences:
 
-1. **Your renderer runs many times** — once on mount and again after every quantity, variant, or selection change. It must repaint from scratch each time.
-2. **You never wire events.** The runtime owns all interactivity, discovered through data attributes. That is why the renderer can replace `innerHTML` on every call without breaking clicks.
+1. **Your renderer runs many times** — on mount and after every quantity, variant, option, tier, or cart change. It rebuilds everything from the view each time.
+2. **You never wire events.** The runtime owns all interactivity, discovered through data attributes. That is why the renderer can repaint on every call without breaking clicks.
+
+## The same widget everywhere
+
+The same renderer and CSS run on your Shopify theme, in the admin **Preview**, in the [headless embed](/headless-bundles-api), and in [Tapcart](/tapcart). `ctx.locale` and the view's prices follow each surface's language and currency. Two things differ off the theme:
+
+- The headless embed and Tapcart always use the widget's own add-to-cart button, so `view.addToCart.themeButtonAdds` is `false` there.
+- They sell one-time only, so `view.subscriptions` is `null`.
+
+Code that follows the contract handles both without special cases.

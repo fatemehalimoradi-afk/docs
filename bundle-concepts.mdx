@@ -1,158 +1,162 @@
 ---
 title: "Bundle concepts"
-description: "Compose product sets, conditions, rewards, and the widget"
+description: "Product sets, offers, tiers, conditions, rewards, and the widget"
 ---
 
-Knit is fully customizable. You do not pick a bundle type. You assemble each offer yourself: **product sets**, **conditions**, and **rewards** for the logic, and the **widget** (renderer and CSS) for how it looks and behaves on the storefront.
+Every Knit bundle is built from the same pieces, whether you made it from a bundle type or with the Bundle Engine:
 
-This page is how the logic pieces connect. You combine them however the offer needs.
-
-## How the pieces connect
-
-**Product sets** are the products in the offer — Set #1, Set #2, and so on.
-
-**Conditions** and **rewards** attach to those sets. A condition counts items from a set (when this tier applies). A reward discounts a set (what the shopper gets, and on which products). Neither piece stands alone: every condition and every reward **names a product set**.
-
-You choose the rest:
-
-- One set or several
-- One condition or several on the same card (all must be true)
-- The discount on the same set as the condition, or on a different set
-- As many **condition-reward** cards as you need — each card is one tier
-
-The combination is the offer. The examples below are assemblies, not the only shape a Knit bundle can take.
-
-<Steps>
-  <Step title="Product sets">
-    Name the products in play. Each set is one product, or a collection.
-  </Step>
-  <Step title="Conditions">
-    Attach quantity rules to those sets: *Customer buys at least 2 items from Set #1*.
-  </Step>
-  <Step title="Rewards">
-    Attach discounts to those sets: *Customer gets 19% off Set #1* — or off a different set.
-  </Step>
-  <Step title="Widget">
-    Customize the renderer and CSS so the storefront matches the brand. Product sets, conditions, and rewards stay the source of truth for who qualifies and what is discounted.
-  </Step>
-</Steps>
-
-## Example: volume on one product
-
-Buy 2 of this shampoo, save 19%.
-
-| Piece | In the editor |
+| Piece | What it is |
 | --- | --- |
-| Product set | Set #1: **Single Product** → the shampoo |
-| Condition | Customer buys **at least 2** items from **Set #1** |
-| Reward | Customer gets **19%** discount on **Set #1** |
+| **Product sets** | The products in play. In the editor: **Products used in logic** |
+| **Offers** | Independent deals inside the bundle. Each offer is a ladder of **tiers** |
+| **Conditions** | What the shopper must buy for a tier to apply |
+| **Rewards** | What the shopper gets when it applies — on products or on shipping |
+| **Widget** | How the bundle looks and behaves on the product page |
 
-The widget can show on that shampoo’s page. At checkout, 19% off applies when the quantity is 2 or more.
-
-The condition and the reward both name Set #1. Change only the product set, and the same “buy 2, 19% off” becomes a different offer:
-
-| You want | Set #1 | What the shopper does |
-| --- | --- | --- |
-| Volume on one product | **Single Product** → the shampoo | Buy 2 of that shampoo |
-| Same volume on every product in a collection | **Single Product (Collection-backed)** → Basics | Buy 2 of *the product they are viewing* (if it is in Basics). They are not mixing products. |
-| Mix and match | **Shopify Collection** → Basics | Pick any products from Basics. Quantity 2 is the **total** across those picks. |
-
-Volume vs mix and match is not a type you pick. It is one way of combining the same pieces.
-
-## Example: discount a different set
-
-The reward can point at a **different** set than the condition.
-
-Buy the phone, get 20% off a case:
-
-| Piece | In the editor |
-| --- | --- |
-| Set #1 | **Single Product** → the phone |
-| Set #2 | **Shopify Collection** → cases |
-| Conditions | at least 1 from Set #1 **and** at least 1 from Set #2 |
-| Reward | 20% off **Set #2** |
-
-The phone is required. The discount lands on the case. Two conditions on the same card must **both** be true.
-
-## More than one tier
-
-**Add new condition-reward** adds the next card against the **same** product sets.
-
-- Card 1: at least 2 from Set #1 → 19% off Set #1
-- Card 2: at least 4 from Set #1 → 25% off Set #1
-
-Knit checks each card. The shopper gets the reward for the tier they meet.
+A bundle type's form builds these pieces for you. The Bundle Engine's **Form** tab lets you edit them directly. This page explains how they fit together.
 
 ## Product sets
 
-Each set has an **Included item** type.
+A product set is one thing the shopper picks from. Add one with:
 
-### Single Product
-
-You pick **one product**. Use this when the offer is that exact item.
-
-The shopper sees that product (variant + quantity). The widget can show on **that product’s page**.
-
-### Single Product (Collection-backed)
-
-You pick a **collection**, not one product. Use this when the same volume offer should run on every product in a collection, without adding each product by hand.
-
-On a product page, Knit uses **the product the shopper is viewing**, but only if it is in that collection. The shopper is still buying **that one product**. If the page product is not in the collection, this set does not apply on that page.
-
-### Shopify Collection
-
-You pick a **collection**. The shopper can choose **more than one product** from it.
-
-The widget lists products from the collection. Quantity on each row starts at 0 until the shopper adds it. Quantity and discount rules apply across those picks.
-
-### How to choose
-
-| You want | Use |
+| Button | The set is |
 | --- | --- |
-| One specific product | **Single Product** |
-| Same volume offer on every product in a collection, one product per page | **Single Product (Collection-backed)** |
-| Shopper mixes several products from a collection | **Shopify Collection** |
+| **Add product** | One product; its variants are the choices |
+| **Add variant** | One specific variant |
+| **Add collection** | A collection; its products are the choices |
+| **Add every product** | Any product in the store. It counts the product the shopper is viewing |
 
-You can combine sets. Example: **Single Product** for a hero item, plus **Shopify Collection** for add-ons.
+Each set also says what the items counted from it must share — **Matching items must be**:
+
+| Option | Meaning | Example |
+| --- | --- | --- |
+| **The same variant** | Every unit is one variant | 3 × Shampoo 250 ml |
+| **The same product** | Every unit is one product, in any of its variants | 3 shirts of one style, mixed sizes |
+| **Any mix** | Units can mix products and variants | Any 3 items from the Basics collection |
+
+On a collection set with **The same product**, the shopper buys one product from the collection. On the product page of a product in that collection, the widget shows that product itself.
+## Offers and tiers
+
+An **offer** is one deal. Its **tiers** are the rungs of a ladder, smallest first: each later tier asks for more and gives more.
+
+- Offer #1, Tier #1: buy 2 → 10% off
+- Offer #1, Tier #2: buy 4 → 20% off
+
+In each offer, the shopper gets **one** tier — by default the highest one their picks meet. In the widget, a shopper can also tap a tier to choose it; the widget changes the picks to meet it.
+
+A bundle can hold **several offers**. They are independent and can all apply in one purchase, each on its own units. For example, one offer for "buy 2, save 10%" on the main product, and a second offer for "add a gift card holder for $5".
 
 ## Conditions
 
-A condition is: **Customer buys** this many **items from** a product set.
+A condition is: **Customer buys** a number of items **counted from** one or more product sets.
 
-| Comparison | Meaning | Example |
+| **Customer buys** | Meaning | Example |
 | --- | --- | --- |
-| **at least** | This number or more | Buy 2 or more |
-| **at most** | This number or fewer | Buy no more than 5 |
-| **exactly** | This number only | Buy exactly 2 |
-| **between** | An inclusive range | Buy 2–4 |
+| **At least** | This number or more | Buy 2 or more |
+| **At most** | This number or fewer | Up to 5 |
+| **Exactly** | This number only | Exactly 3 |
+| **Between** | An inclusive range | 2–4 |
 
-What “items from” means depends on the set:
+How conditions count:
 
-- **Single Product** and **Single Product (Collection-backed)** — units of that one product.
-- **Shopify Collection** — total units the shopper picked from the collection.
+- **Items from all the selected sets count together.** "Between 2 and 5 from Shampoo and Conditioner" is met by 1 shampoo + 2 conditioners. To require each one, add one condition per product set.
+- **A maximum caps; it doesn't refuse.** With "at most 5", a shopper who buys 7 gets the discount on 5 and pays full price for the other 2. Adding an item never lowers the discount.
+- **AND and OR.** Conditions added with **+ AND new condition** must all hold. Conditions joined with **+ OR** are alternatives: any one of them is enough.
+- **All tiers.** A condition set with **Apply to every tier** (badge **All tiers**) belongs to the offer, so every tier of it must meet it too.
+
+### Triggers
+
+Some bundles need "the shopper already has X in the cart" rather than "the shopper buys X in this bundle". A **trigger** is a condition that counts matching items **anywhere in the cart** and uses none of them — it only qualifies the shopper. Each item qualifies an offer once per cart.
+
+Bundle types and the AI create triggers for you (for example, an add-on discount that needs the main product in the cart). The Form tab doesn't edit them.
 
 ## Rewards
 
-A reward is: **Customer gets** this **discount on** a product set.
+A reward is what the tier gives, on the product sets you choose under **Discount applies to**. The reward's set doesn't have to be the one the condition counts: "buy the phone, get 20% off a case" counts the phone and discounts the case.
 
-**Percentage** — a percent off those items (0–100). Example: 19% off.
+| **Reward type** | Value | Meaning |
+| --- | --- | --- |
+| **Percentage discount** | **Percentage** | A percent off |
+| **Fixed discount** | **Amount** | A money amount off, in your shop currency |
+| **Set price** | **Price** | What the items end up costing, not a reduction. `0` makes them free |
 
-**Fixed amount** — a money amount off, in your shop currency. Then choose how it spreads:
+For a fixed discount or a set price, **Applies per** says how the value spreads:
 
-| Mode | Meaning |
+| **Applies per** | Meaning | Example |
+| --- | --- | --- |
+| **Total** | Once, across all the discounted items together | $10 off on two sets is $10 off their combined subtotal |
+| **Per selector** | Once for each product set | $10 off on two sets is $20 off |
+| **Per unit** | Once for each unit | $5 off with quantity 3 is $15 off |
+
+### Buy X, get Y
+
+A reward can discount only **some** of the units: skip the first X, then discount up to Y, cheapest first. "Buy 3, get 1 free" is a 100% reward that skips 3 and discounts 1 — of 4 units, the cheapest is free. Bundle types and the AI set this up; the Form tab shows it as read-only text.
+
+### Shipping rewards
+
+**+ Add shipping reward** (one per tier) gives the shopper a deal on delivery when the tier applies:
+
+| **Shipping reward** | Meaning |
 | --- | --- |
-| **Total** | The amount off the qualifying items as a group, once. 10 off on two product sets is 10 off the combined subtotal. |
-| **Per selector** | The amount off each product set you attached the reward to. 10 off on two product sets is 20 off. |
-| **Per unit** | The amount off each unit in those product sets. 5 off with quantity 3 is 15 off. |
+| **Shipping price** | The shopper pays this for shipping. `0` is free shipping |
+| **Fixed discount** | An amount off shipping, at most the shipping cost |
+| **Percentage discount** | A percent off shipping |
 
-The discount is applied at Shopify checkout, not as a precomputed product price. Keep the Knit automatic discount **Active** in Shopify admin → **Discounts**.
+### Several rewards on a tier
+
+A tier can have several rewards — for example, 10% off the main product and a free gift. They all apply.
+
+## Where the discount happens
+
+Knit doesn't change product prices. When the shopper adds the bundle, each cart line is tagged, and Knit's Shopify discount function applies the rewards at checkout. The widget shows the same discount ahead of time, worked out by the same rules.
+
+Keep Knit's automatic discount (title ending in **(DO NOT DELETE)**) **Active** in Shopify admin → **Discounts**. See [Shopify integration](/shopify-integration#checkout).
 
 ## Widget
 
-The widget is the fourth piece of the bundle. In the same editor, **Renderer** and **Stylings (CSS)** control how the offer looks and behaves on the product page — layout, copy, and interaction. Change the widget to match the brand. The product sets, conditions, and rewards stay the source of truth for who qualifies and what is discounted.
+The widget is how the bundle appears on the product page. A bundle type ships a ready widget you style in its **Style** panel. A Bundle Engine bundle has its own **JS code** and **CSS code**, which the AI writes and you can edit. See [Widget](/widget).
 
-See [Widget](/widget) to write the renderer, CSS, and plugins.
+## Examples
 
-## Bundle state
+### Volume discount on one product
 
-Only **Active** bundles appear on the storefront.
+Buy 2 of this shampoo, save 19%.
+
+| Piece | Setting |
+| --- | --- |
+| Product set | Product #1: the shampoo, **The same variant** |
+| Tier #1 condition | **Customer buys** **At least** 2 from Product #1 |
+| Tier #1 reward | **Percentage discount** 19% on Product #1 |
+
+### Mix and match
+
+Any 3 from the Basics collection for $30.
+
+| Piece | Setting |
+| --- | --- |
+| Product set | Collection #1: Basics, **Any mix** |
+| Tier #1 condition | **Exactly** 3 from Collection #1 |
+| Tier #1 reward | **Set price** $30, **Applies per** **Total**, on Collection #1 |
+
+### Buy one thing, discount another
+
+Buy the phone, get 20% off a case.
+
+| Piece | Setting |
+| --- | --- |
+| Product sets | Product #1: the phone. Collection #1: cases |
+| Tier #1 conditions | **At least** 1 from Product #1 **AND** **At least** 1 from Collection #1 |
+| Tier #1 reward | **Percentage discount** 20% on Collection #1 |
+
+### A ladder
+
+| Tier | Condition | Reward |
+| --- | --- | --- |
+| Tier #1 | **At least** 2 from Product #1 | 10% off Product #1 |
+| Tier #2 | **At least** 4 from Product #1 | 20% off Product #1 |
+
+A shopper with 5 in the cart gets Tier #2.
+
+## Bundle status
+
+Only **Active** bundles appear on the storefront and get the checkout discount. A **Draft** bundle can be previewed with `?nameless_preview=true`, without the discount.

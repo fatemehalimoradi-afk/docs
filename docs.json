@@ -26,6 +26,7 @@
               "bundle-concepts",
               "widget",
               "renderer-function",
+              "renderer-view",
               "data-attributes",
               "styling",
               "plugin-hooks",

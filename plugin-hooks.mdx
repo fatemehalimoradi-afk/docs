@@ -3,7 +3,7 @@ title: "Plugin hooks"
 description: "Observe, block, or annotate add-to-cart from a storefront script"
 ---
 
-Plugins are for logic *around* the cart: eligibility gating, analytics, loyalty references, custom line-item properties. They live in a script you load on the storefront — **not** in the bundle’s JS asset.
+Plugins are for logic *around* the cart: eligibility gating, analytics, loyalty references, custom line-item properties. They live in a script you load on the storefront — **not** in the bundle's renderer.
 
 ## Registering
 
@@ -20,17 +20,21 @@ window.nameless.use({
 });
 ```
 
-`use()` returns an unsubscribe function. You can call it before the runtime has installed: a pre-install shim queues plugins and replays them at install time, so script order doesn’t matter. `window.nameless.ready` resolves once bundle data is loaded, if you need to wait for state rather than just register.
+`use()` returns an unsubscribe function. You can call it before the runtime has installed: a pre-install shim queues plugins and replays them at install, so script order doesn't matter. `window.nameless.ready` resolves once bundles are loaded, if you need to wait for state rather than just register.
+
+Plugins are global: they run for every bundle on the page. Branch on `ctx.bundleId` when a hook is for one bundle.
 
 ## `addToCart.before`
 
-Runs after selections validate, before the cart request. It can **block** the add or **attach line properties**.
+Runs after the picks validate, before the cart request. It can **block** the add or **attach line properties**.
 
 | Context field | Type |
 | --- | --- |
 | `bundleId` | `string` |
-| `snapshot` | the bundle snapshot (read-only) |
-| `lines` | `Array<{ selectorId, variantId, quantity }>` |
+| `snapshot` | `{ bundleId: string }` |
+| `lines` | `Array<{ selectorId, variantId, quantity, sellingPlanId? }>` — `sellingPlanId` only on a subscription line |
+
+`snapshot` carries the bundle id only. To read prices or picks, subscribe to the bundle's [view](/runtime-api#reading-state).
 
 Return one of:
 
@@ -40,23 +44,25 @@ undefined                                                   // no opinion
 { ok: false, code: string, message: string }                // blocks the add
 ```
 
-A block surfaces to the shopper as dispatch code `PLUGIN_BLOCKED` with `"{code}: {message}"`, and remaining `before` hooks are skipped.
+A block ends the add with dispatch code `PLUGIN_BLOCKED` and the message `"{code}: {message}"`; the remaining `before` hooks are skipped.
 
-`lineProperties` are keyed by **selector id** and land on the matching Shopify cart line as line-item `properties`. Multiple hooks merge; later hooks win per key.
+`lineProperties` are keyed by **selector id** and land on every cart line of that selector as Shopify line-item `properties`. Multiple hooks merge; later hooks win per key. Prefix a key with `_` to keep it hidden from the shopper on themes that hide underscore properties.
 
 <Warning>
-  Do not write the `__FB_ATC_UID` property. Knit stamps it on every line and the Shopify discount function reads it to group bundle lines and detect stale bundles. Overwriting it silently kills the bundle discount at checkout.
+  Don't set `__FB_ATC_UID`. Knit writes it on each bundle line after your hooks run, so your value is replaced, and the Shopify discount function needs Knit's value to find the bundle.
 </Warning>
 
 ## `addToCart.after`
 
-Fire-and-forget, runs after the cart responds. Same context plus `result`:
+Fire-and-forget, after the cart responds. Same context plus `result`:
 
 ```ts
-result: { ok: true; lines: Line[] } | { ok: false; code: string; message: string };
+result:
+  | { ok: true; lines: Array<{ selectorId, variantId, quantity, sellingPlanId? }> }
+  | { ok: false; code: string; message: string };
 ```
 
-Return nothing, or `{ warnings: string[] }` to surface messages in the host’s warning log. You cannot change the outcome from here.
+Return nothing, or `{ warnings: string[] }` to add messages to the host's warning log. You can't change the outcome from here.
 
 ## Execution semantics
 
@@ -64,12 +70,12 @@ Return nothing, or `{ warnings: string[] }` to surface messages in the host’s 
 | --- | --- |
 | Order | Sequential, in registration order — never parallel |
 | Timeout | 1500ms per hook. Exceeding it logs `HOOK_TIMEOUT` and moves on |
-| Thrown errors | Logged as `HOOK_THREW` and skipped — they never break the shopper’s add-to-cart |
-| Bad return values | Anything that isn’t a plain object or `void` logs `HOOK_INVALID_RESULT` and is ignored |
+| Thrown errors | Logged as `HOOK_THREW` and skipped — they never break the shopper's add-to-cart |
+| Bad return values | Anything that isn't a plain object or `undefined` logs `HOOK_INVALID_RESULT` and is ignored |
 | Blocking | Only an explicit `{ ok: false }` halts the pipeline |
-| Mid-run changes | Hooks registered during a run don’t join that run |
+| Mid-run changes | Hooks registered or removed during a run don't affect that run |
 
-Because slow hooks are cut off at 1500ms, keep network calls out of `before`, or accept that a slow response is treated as “no opinion”.
+Because slow hooks are cut off at 1500ms, keep network calls out of `before`, or accept that a slow response counts as "no opinion".
 
 ## Worked example
 
@@ -98,4 +104,4 @@ window.nameless.use({
 });
 ```
 
-To reshape the theme’s own add-to-cart when ATC override is on, see [Resolver stages](/resolver-stages).
+To reshape the theme's own add-to-cart when the theme button adds the bundle, see [Resolver stages](/resolver-stages).

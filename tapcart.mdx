@@ -47,9 +47,10 @@ If any of these are missing, contact your Knit account manager.
 
     | Setting | Description |
     | --- | --- |
-    | Embed base URL | **Leave blank.** Only set this if Knit support asks you to. |
-    | Bundle handle | Show one specific bundle. Blank = whatever matches the product. |
-    | Initial height | Placeholder height (px) for the **static App Studio canvas only**. On device the widget sizes to content. Default `600`. |
+    | Knit app origin override | **Leave blank** (blank = production). Only set this if Knit support asks you to. |
+    | Bundle handle, Bundle type | **Leave blank.** They don't currently limit which bundles show; every bundle that matches the product renders. |
+    | Initial height in px | Fallback height until the widget reports its size — what you see on the **static App Studio canvas**. On device the widget sizes to content. Default `600`. |
+    | Debug mode | Console logs and an on-screen diagnostic panel. **Leave blank in production.** |
   </Step>
   <Step title="Save and publish">
     Save the screen, then **Publish** the app (or push a preview build).
@@ -57,7 +58,7 @@ If any of these are missing, contact your Knit account manager.
 </Steps>
 
 <Warning>
-  If **Embed base URL** is set to the wrong value, the widget stays blank. Clear the field to use automatic store resolution.
+  If **Knit app origin override** is set to the wrong value, the widget stays blank. Clear the field to use production.
 </Warning>
 
 ## Verify
@@ -89,7 +90,7 @@ Then complete a test order. Each bundle line in Shopify admin → **Orders** sho
 Bundle changes in Knit admin can take up to **5 minutes** to show in the app.
 
 <Note>
-  Placement is product page only in this version. The block does not replace Tapcart's native Add to Cart button. Your Shopify web storefront is unchanged.
+  Placement is product page only in this version. The block does not replace Tapcart's native Add to Cart button. In the app, bundles sell one-time only (no subscription plans), and bundles shown as a popup or hidden on product pages don't appear. Your Shopify web storefront is unchanged.
 </Note>
 
 ## CLI (optional)

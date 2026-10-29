@@ -3,40 +3,96 @@ title: "Data attributes"
 description: "The interaction contract the runtime wires after each render"
 ---
 
-After each render the runtime queries these attributes inside `container` and attaches delegated listeners. The **value is always the selector’s** `sel.id` (except `data-nameless-atc`, which takes the bundle id).
+The renderer attaches no handlers. After each paint, the runtime finds these attributes inside the container and listens for them through delegated listeners on the container itself, so they survive every repaint.
+
+Controls inside a disabled `<fieldset>`, or carrying `disabled` or `aria-disabled="true"`, are ignored.
+
+## Core attributes
 
 | Attribute | Element | Value | Runtime behavior |
 | --- | --- | --- | --- |
-| `data-nameless-variant-selector` | `<select>` | `sel.id` | On `change`, dispatches `variantChange` with `select.value` as the variant id |
-| `data-nameless-qty-selector` | input / button (see patterns) | `sel.id` | Quantity interaction; behavior inferred from element type and structure |
-| `data-nameless-product-id` | the control on a **collectionMulti** row | `product.id` | Tells the runtime which product in the collection changed. Required on every multi row control |
-| `data-nameless-atc` | `<button>` | `snapshot.bundleId` | On `click`, adds the whole bundle. Runtime manages the button’s `disabled` state and label |
-
-Each `<option value="…">` in a variant `<select>` must be the variant id — the runtime reads `select.value` verbatim.
+| `data-nameless-variant-selector` | `<select>` | `selector.id` | On `change`, picks the variant in `select.value` |
+| `data-nameless-option-selector` | `<select>` | `selector.id` | On `change`, picks one option value (see [option dropdowns](#option-dropdowns)) |
+| `data-nameless-option-name` | the same `<select>` | `option.name`, e.g. `Size` | Says which option the dropdown is |
+| `data-nameless-unit` | the same `<select>` | the unit's index | Which unit it picks for. Required when `selector.unitPicks` is set |
+| `data-nameless-qty-selector` | input or button (see [patterns](#quantity-and-tier-patterns)) | `selector.id` | Sets a quantity; the behavior follows the element type and structure |
+| `data-nameless-product-id` | each control on a collection row | `product.id` | Says which product of the collection changed. Required on collection rows |
+| `data-nameless-tier-id` | any element that stands for one tier | `tier.id` | On `click`, chooses that tier |
+| `data-nameless-load-more` | `<button>` after a collection's rows | `selector.id` | On `click`, loads the selector's next batch of products |
+| `data-nameless-atc` | `<button>` | `view.bundleId` | On `click`, adds the whole bundle to the cart |
+| `data-nameless-selling-plan-selector` | `<select>` | `selector.id` | On `change`, sets the item's selling plan; `""` is one-time |
+| `data-nameless-selling-plan-group-selector` | `<select>` | (no value) | On `change`, puts every item on one selling-plan group; `""` is one-time |
 
 <Note>
-  Prefer these attributes over `dispatch`. Quantity, variant, selection, and add-to-cart all have a supported path already. That path stays correct through repaints, PDP coupling, plugin hooks, and the override pipeline. See [Runtime API](/runtime-api).
+  Prefer these attributes over `dispatch`. Every interaction already has a supported path, and that path stays correct through repaints, add-to-cart override, and plugin hooks. See [Runtime API](/runtime-api).
 </Note>
 
-## Quantity patterns
+## Quantity and tier patterns
+
+The value of `data-nameless-qty-selector` is always the selector id. The runtime infers what to do from the element:
 
 | Pattern | Markup | Behavior |
 | --- | --- | --- |
-| **Number input** | `<input type="number" min="0" step="1" data-nameless-qty-selector="{sel.id}">` | On `change`, sets quantity to `Number(value)`. Invalid or empty falls back to `min` or `1` |
-| **Quantity card** | `<button type="button" data-nameless-qty-selector="{sel.id}" value="{qty}">` | On `click`: if the current quantity already equals `value`, sets `0` (toggle off); otherwise sets `value`. Set `aria-pressed` yourself for styling |
-| **Optional add-on** | One checkbox **and** one number input sharing the same selector id (and product id on multi rows) | Unchecking sets quantity `0` and remembers the number; re-checking restores it. Editing the number while unchecked only updates the remembered value |
-| **Multi-selector tier** | `<button type="button">` containing two or more `<input type="hidden" data-nameless-qty-selector="{sel.id}" value="{qty}">` | On `click`, applies all descendant quantities atomically. Put the attribute on the hidden inputs, **never** on the tier button. Set `aria-pressed` yourself |
+| **Number input** | `<input type="number" min="0" step="1" data-nameless-qty-selector="{selector.id}">` | On `change`, sets the quantity to `Number(value)`. Invalid or empty falls back to `min` or `1` |
+| **Quantity card** | `<button type="button" data-nameless-qty-selector="{selector.id}" value="{qty}">` | On `click`: if the quantity already equals `value`, sets `0` (toggle off); otherwise sets `value`. Set `aria-pressed` yourself for styling — the runtime doesn't read it |
+| **Optional add-on** | One checkbox **and** one number input with the same selector id (and the same product id on collection rows) | Unchecking sets `0` and remembers the number; checking restores it. Editing the number while unchecked only updates the remembered value |
+| **Tier control** | Any element with `data-nameless-tier-id="{tier.id}"` — a card, a button, a row | On `click`, chooses the tier. The engine makes the smallest change to the picks that meets it. Set `aria-pressed="true"` when `tier.state === "applied"` |
+| **Batch button** | `<button type="button">` with **no** tier id, holding two or more `<input type="hidden" data-nameless-qty-selector="{selector.id}" value="{qty}">` | On `click`, sets every listed quantity at once, naming no tier. Put the attribute on the hidden inputs, **never** on the button |
+
+### Tier controls
+
+A tier control carries the tier id and nothing else — no hidden quantity inputs (that is the batch button). The engine owns what the tier means:
+
+- On a one-product selector it raises the quantity to what the tier needs, or lowers it to the tier's maximum.
+- On a collection selector it adds to the first picked item, or takes from the last.
+- Tapping the tier the shopper already chose clears the choice; the offer falls back to the best tier the picks meet.
+- One chosen tier per offer: choosing another replaces it, and any change that stops it applying drops it.
+
+Draw the attribute only when `tier.ifChosen` is not `null` or `tier.chosen` is true. Otherwise draw the tier as information, without the attribute. Draw it `disabled` when `tier.inStock` is false.
+
+A control **inside** a tier card keeps its own click: a variant `<select>`, a quantity input, a label, a link, or a button inside the card doesn't choose the tier. Only a click on the card itself does.
+
+Never put `data-nameless-tier-id` and `data-nameless-atc` on the same element — the tier click wins and nothing is added.
+
+## Option dropdowns
+
+The alternative to one variant `<select>`: one `<select>` per entry in `product.options`.
+
+```html
+<select data-nameless-option-selector="{selector.id}" data-nameless-option-name="Size">
+  <option value="S">S</option>
+  <option value="M" selected>M</option>
+</select>
+```
+
+- `<option value>` is the **option value**, not a variant id. Mark selected what `selector.optionPicks` holds.
+- On `change`, the engine merges the pick over `optionPicks` and sets the selection to the one variant carrying every picked value, or to none.
+- Use one shape per selector — never both a variant selector and option selectors on the same `<select>`.
+- When `selector.unitPicks` is set, draw one line of option dropdowns per unit and add `data-nameless-unit="{index}"` to each.
+- Option dropdowns are for one-product selectors (a product selector, or a collection selector with `asPageProduct: true`). The option change carries no product id, so on collection rows use a variant `<select>` instead.
 
 ## Placement rules
 
-- Single-product selectors (`productSingle`, or `collectionSingle` with a resolved product): one variant `<select>` and one qty control per selector, and **no** `data-nameless-product-id`.
-- `collectionMulti`: every variant select, qty input, checkbox, and card on a row carries **both** the selector id and `data-nameless-product-id="{product.id}"`.
-- Pair exactly one checkbox with one number input per add-on selector — never two number inputs for the same selector/product pair.
-- Tier buttons need at least two hidden qty inputs with distinct selector ids.
-- Controls inside a disabled `<fieldset>`, or carrying `disabled` / `aria-disabled="true"`, are ignored by the runtime.
-- Don’t put interaction attributes on anything that shouldn’t trigger an action.
-- Render the ATC button enabled unless the bundle is genuinely unbuyable (e.g. a selected item is sold out); the runtime takes over its label and disabled state during the request.
+- **One-product selectors** (`itemType: "product"`, or a collection selector with `asPageProduct: true`): one variant `<select>` (or one set of option dropdowns) and one quantity control per selector, and **no** `data-nameless-product-id`.
+- **Collection rows** (`itemType: "collection"`, `asPageProduct: false`): every variant select, quantity input, checkbox, card, and plan select on a row carries **both** the selector id and `data-nameless-product-id="{product.id}"`.
+- In a variant `<select>`, each `<option value>` is the variant id. The runtime reads `select.value` as is.
+- On a collection row you don't need to send a variant when the quantity moves up from `0`. The runtime takes it from the existing selection or the product's `defaultVariantId`.
+- Pair exactly one checkbox with one number input per add-on — never two number inputs for the same selector and product.
+- A batch button needs at least two hidden inputs, with distinct selector ids.
+- A collection selector whose `moreProducts` is not `none` gets one `data-nameless-load-more` button after its rows, disabled while `loading`.
+- Don't put interaction attributes on anything that shouldn't trigger an action.
 
-On a `collectionMulti` row you don’t need to send a variant when the quantity moves from `0` upward — the runtime resolves it from the existing selection or the product’s first available variant.
+## Add-to-cart button
 
-When `snapshot.meta.atcOverride` is `true`, omit `[data-nameless-atc]` entirely. See [Renderer function](/renderer-function#pdp-add-to-cart-override).
+- When `view.addToCart.themeButtonAdds` is `false`, draw one `<button data-nameless-atc="{view.bundleId}">`.
+- When it is `true`, draw **no** button. The host also removes any `[data-nameless-atc]` after render.
+- Draw its disabled, busy, and error states from `view.addToCart`. See [Renderer function](/renderer-function#add-to-cart-button).
+
+## Selling-plan controls
+
+Draw these only when `view.subscriptions` is not `null`:
+
+- **Per item (default):** one `<select data-nameless-selling-plan-selector="{selector.id}">` per picked item whose chosen variant has plans. Each `<option value>` is a plan id from **that item's own chosen variant** (`variant.plans[].id`); the one-time option is `value=""`. Add `data-nameless-product-id` on collection rows.
+- **Shared (alternative):** one `<select data-nameless-selling-plan-group-selector>` whose `<option value>` is a group name from `view.subscriptions.sharedGroups`, only while `sharedPlanOffered` is true. Never both kinds of control.
+
+The rules for each are on [Renderer view](/renderer-view#subscriptions).

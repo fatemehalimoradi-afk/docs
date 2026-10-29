@@ -1,34 +1,123 @@
 ---
 title: "Shopify integration"
-description: "How Knit runs on a Shopify Liquid storefront"
+description: "How Knit runs on a Shopify Liquid storefront and at checkout"
 ---
 
-On a standard Shopify Liquid theme, Knit uses three pieces:
+On a standard Shopify Liquid theme, Knit uses these pieces:
 
 | Piece | Role |
 | --- | --- |
-| Theme app extension | Renders the bundle widget on matching product pages |
-| Cart line-item properties | Carries `__FB_ATC_UID` so lines stay grouped |
-| Discount Function | Applies the bundle reward at checkout |
+| Theme app extension | Loads bundle data and draws the widget on product pages |
+| Cart line-item property `__FB_ATC_UID` | Tags each bundle line so checkout can find the bundle |
+| Discount function | Applies the bundle's rewards at checkout, on products and on shipping |
 
-Enable the Knit app embed in the theme editor so the widget can mount. You do **not** need the theme app extension for [headless endpoints](/headless-bundles-api) or [Tapcart](/tapcart). Those load from the Knit app origin:
+You don't need the theme app extension for [headless endpoints](/headless-bundles-api) or [Tapcart](/tapcart). Those load from the Knit app origin, `https://app.knit-bundle.co`.
 
-```
-https://app.knit-bundle.co
-```
+## The app embed
 
-## Add to cart override
+Turn on the app embed in **Online Store → Themes → Customize → App embeds**. It is listed as **Nameless Bundles**. It has no settings: it runs Knit on every page of your store, finds the bundles that match the product page, and places their widgets.
 
-If a bundle has **ATC override** enabled, the shopper clicks the theme's Add to Cart button and Knit adds the bundle lines instead of a single product. The widget should not show its own add-to-cart button in that mode. Developers can wrap that pipeline — see [Resolver stages](/resolver-stages).
+Bundle data comes with the page itself, from your store's Shopify data, so there's no extra request on most product pages. After you save a bundle, Knit syncs it to Shopify in the background; reload the page once the editor shows **Synced**. On some pages (very large collections, or a block that names a bundle) the widget fetches its data instead, and a browser session can keep that copy for up to 5 minutes.
 
-If override is off, the widget shows its own add-to-cart control.
+### Which bundles show on a product page
+
+A bundle shows on a product page when it is **Active**, its display is on (**Show this bundle on product pages**), and one of its product sets matches the page:
+
+- a product set for that product, or for one of its variants
+- a collection set the product belongs to
+- an **every product** set
+- or the page is the bundle's own [Bundle as Product](#bundle-as-product) page
+
+With **Show on → Selected products' pages**, only the product sets you selected make the bundle show. When several bundles match, they show in **Display priority** order (lower first).
+
+## Placing the widget
+
+Knit places each widget automatically, in this order:
+
+1. Where you placed the theme's app block for that bundle (see below).
+2. The bundle's **Widget position** — **Above** or **Below** the theme's add-to-cart button, or a **Custom element** by CSS selector.
+3. The store's **Default widget position** from **Settings**.
+4. Next to the theme's add-to-cart button, found automatically.
+5. The end of the product section. The console warns when this happens — set a widget position.
+
+If the theme redraws the product section, Knit puts the widget back. Several widgets on the same spot stack in priority order, with a 16px gap your theme can change with the CSS variable `--nameless-bundle-gap`.
+
+**Hide elements** (per bundle under **Advanced**, or store-wide in **Settings**) hides theme elements by CSS selector while the widget shows — for example, the theme's own quantity picker.
+
+### The app block
+
+To put the widget in an exact spot, use the theme's app block:
+
+1. In the bundle editor, open **App block** and **Copy display handle**.
+2. Open your theme editor on a product template.
+3. Add the **Nameless** app block where the widget should go.
+4. Paste the handle into its **Bundle metaobject handle** setting.
+
+Leave the setting empty to show whichever bundles match the product.
+
+### Pop-up
+
+With **Display as → Pop-up**, the widget opens in a dialog when the shopper clicks the theme's add-to-cart button, instead of the theme adding the product. One pop-up per page: the highest-priority pop-up bundle wins. The dialog closes after the bundle is added, or with the close button, Esc, or a click outside.
+
+## Add-to-cart method
+
+| **Add-to-cart method** | What the shopper clicks |
+| --- | --- |
+| **Using widget button** (default) | The widget's own add-to-cart button |
+| **Using theme button** | The theme's add-to-cart button, which adds the bundle instead of the product |
+
+With the theme button:
+
+- Knit intercepts the theme's add-to-cart once the widget has drawn, and adds the bundle's lines.
+- The theme form's variant and quantity feed the product set for the page's product. A quantity of N adds N bundles, each discounted on its own.
+- The widget draws no add-to-cart button of its own.
+- One bundle per page takes the theme button: the first in priority order.
+- It works best for **a main product plus optional picks**. A bundle made only of a collection list isn't supported.
+- After the add, the theme's cart drawer opens.
+
+Developers can wrap this pipeline — see [Resolver stages](/resolver-stages).
+
+## After add-to-cart
+
+When the widget's own button adds a bundle, **Settings → Widget button action** decides what happens next:
+
+| Action | Result |
+| --- | --- |
+| **Cart drawer** (default) | Opens the cart drawer. Knit recognizes common cart apps and themes (including Horizon, Dawn, Prestige, Impulse, and Expanse); if none is found, the shopper goes to the cart page |
+| **Cart page** | Goes to `/cart` |
+| **Checkout** | Goes to checkout |
+| **Do nothing** | Stays on the page; the cart count refreshes |
+
+A theme with a custom drawer can register its own handlers with `window.nameless.registerShopThemeScript({ open, refresh?, cartCount? })` from a script your store's Knit configuration loads. When registered, it replaces drawer detection; if it fails, the shopper goes to the cart page.
 
 ## Checkout
 
-Shoppers pay in **Shopify checkout**. A Shopify **Discount Function** shipped with the app applies the bundle reward. You do not configure this per add-to-cart.
+Shoppers pay in **Shopify checkout**. Knit's discount function — a Shopify Function shipped with the app — applies the bundle rewards: product discounts on the bundle's lines, and shipping rewards on delivery options.
 
-Keep the Knit automatic discount **Active** in Shopify admin → **Discounts**. Do not delete it.
+Keep Knit's automatic discount **Active** in Shopify admin → **Discounts**. Its title ends in **(DO NOT DELETE)**. Don't delete or rename it.
 
-When a shopper adds a bundle, every line in that add carries `__FB_ATC_UID`. The theme app extension sets this. The Discount Function uses it to group the lines, match the tier, and apply the reward. If a cart app strips line-item properties, items sit in the cart at **full price**.
+How it finds the bundle:
+
+- Every line of a bundle add carries the line-item property `__FB_ATC_UID`. Lines that share a bundle and an add-to-cart id are one bundle; two adds of the same bundle are two bundles.
+- The function checks the bundle's offers against those lines, using the bundle's current settings, and applies the matching tier's rewards.
+- If a cart app or theme strips line-item properties, the items stay in the cart at **full price**.
+
+**Settings → Discount combinations** controls whether bundle discounts combine with other product, order, and shipping discounts. Discount codes and other apps' discounts are not shown in the widget, so the widget's total can differ from the checkout total.
+
+Only **Active** bundles get the discount. A bundle previewed with `?nameless_preview=true` adds at full price.
 
 To confirm: add a bundle from the widget, complete a test order, and check Shopify admin → **Orders**. Each bundle line should show `__FB_ATC_UID` and the discount. If the discount is missing, see [Troubleshooting](/troubleshooting).
+
+## Subscriptions
+
+With **Let customers buy this bundle on a subscription** on, the widget offers each product's selling plans and adds each line with the plan the shopper picked. **Settings → Subscription discount** decides which payments get the bundle discount.
+
+While the bundle owns the theme's add-to-cart and sells subscriptions, Knit hides the plan picker of supported subscription apps on the page, so shoppers see one choice.
+
+## Bundle as Product
+
+A bundle with **Bundle as Product** turned on has its own Shopify product and product page.
+
+- The product can't be bought alone: Shopify refuses it as a cart line. On its page, the bundle's add is the only way to buy. **Buy it now** is always hidden; with the widget's button, the theme's add-to-cart is hidden too; with the theme's button, it adds the bundle.
+- Everywhere else on the store — a collection page, a quick-add — an add of that product sends the shopper to its page instead.
+- On its page, no other bundle shows, and Knit leaves Bundle as Product products out of other bundles' collections.

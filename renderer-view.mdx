@@ -1,0 +1,515 @@
+---
+title: "Renderer view"
+description: "The view a renderer draws from: selectors, tiers, prices, and add-to-cart state"
+---
+
+`ctx.view` is everything the widget draws. The engine has already applied every rule and worked out every price, so what you need is in the view or one lookup away. There are no conditions, reward rules, or engine state in it.
+
+## How to read it
+
+| You want | Read |
+| --- | --- |
+| What the shopper can pick | `view.selectors[]` → `products[]` → `variants[]` |
+| What is picked now | `selector.selections[]` |
+| One item's price | `selection.eachNow` (and `eachWas` when discounted) |
+| A line's price | `selection.now` (and `was`) |
+| A selector's total | `selector.summary` |
+| The footer total | `view.summary.now`, `was`, `saved` |
+| An unpicked product's price | Its `defaultVariantId` variant's `price` |
+| The offer's tiers, which one applies, what is missing | `view.tiers[]` |
+| Add-to-cart button state | `view.addToCart` |
+| Subscription controls | `view.subscriptions` (null = draw none) |
+
+## Money
+
+Every price is a `Money`:
+
+```ts
+interface Money {
+  amount: number;   // whole number in the currency's smallest unit — for comparing only
+  currency: string; // ISO 4217, the shopper's currency
+  text: string;     // formatted for ctx.locale, e.g. "$16.20" — the only thing you print
+}
+```
+
+- Print `.text`. Never add, multiply, divide, or format an amount yourself.
+- `was` and `saved` are `null` when nothing is discounted. Draw one price then, never a struck-through duplicate.
+- Every amount in one view is in the same currency.
+- Never present the total as the checkout total. Discount codes and other apps' discounts are invisible to the widget.
+
+## Selectors
+
+A selector is one place the shopper picks — one product set in the editor. Iterate `view.selectors` (merchant order) and branch on `itemType` and `type` before reading products.
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Goes into `data-nameless-*-selector` attributes |
+| `itemType` | `"product"` — its members are one product's variants. `"collection"` — its members are a collection's products |
+| `type` | `"single"` — every unit is the same member. `"multi"` — units can mix members |
+| `grouping` | What every counted unit shares: `"variant"`, `"product"` (any of its variants), or `"general"` (any mix). Use it to word the row ("pick a size" vs "mix sizes") |
+| `products` | Products loaded so far. Products with no variant left are not listed. Empty when nothing is left to sell |
+| `selections` | What is picked, one entry per picked variant |
+| `summary` | These picks' totals and unit count |
+| `startQuantity` | Units a pick here starts with. A row still waiting for its pick stands for this many |
+| `optionPicks` | Option name → picked value, for drawing option dropdowns |
+| `unitPicks` | `null`, or one entry per unit when the shopper picks each unit on its own |
+| `pickedLast` | The shopper changed this selector's variant last |
+| `pickNeeded` | An option is still unpicked, so add-to-cart waits. Name the row once `addToCart.pressed` is true |
+
+A collection selector also has:
+
+| Field | Meaning |
+| --- | --- |
+| `collection` | `{ handle, title }` |
+| `asPageProduct` | `true`: the page's product belongs to the collection and stands for it here. `products` holds that product alone, and it is drawn and picked like a product selector |
+| `moreProducts` | `"ready"`, `"loading"`, `"failed"`, or `"none"` — see [Large collections](#large-collections) |
+
+### What to draw
+
+| `itemType` + `type` | Draw | Products | Selections |
+| --- | --- | --- | --- |
+| `"product"`, either type | One product row | `products[0]` | Zero or one entry; one per unit when `unitPicks` is set |
+| `"collection"`, `asPageProduct: true` | One product row, picked like a product selector | `products[0]` | As a product selector |
+| `"collection"` + `"single"` | One row per product; picking one replaces the previous pick | `products` | At most one entry; match by `productId` |
+| `"collection"` + `"multi"` | One row per product | `products` | One entry per picked product; match by `productId` |
+
+A product selector with `type: "multi"` is still one product row; the shopper mixes variants, one pick per unit when `unitPicks` is set.
+
+Reading recipes:
+
+- A selector's heading is `selector.collection.title` for a collection selector, else `selector.products[0].title`.
+- A product with no entry in `selections` is unpicked (quantity `0`). Draw it with its `defaultVariantId` variant — that variant's price, picture, and stock — and mark it selected in its `<select>`.
+- A product's picture is its picked variant's `image`, else its `defaultVariantId` variant's.
+- Display `selection.quantity`. Never hardcode a starting quantity; the engine sets initial picks before the first render.
+- `view.pageProductId` is the product whose page shows the bundle (`null` off a product page). Compare it with `product.id` to set the page's own product apart.
+- A row is optional when no tier's `requirements` name it with a `min` above 0. Draw it as an add-on if the design calls for it.
+- Link to a product or collection with `ctx.productUrl(handle)` / `ctx.collectionUrl(handle)`. Both return `null` where the surface has no pages.
+
+### Options and per-unit picks
+
+Each product lists its `options` (`{ name, values }`, merchant order) and each variant its option values. You can draw variants two ways — pick one shape per selector:
+
+- **One variant dropdown** — `<option value>` is the variant id. See [Data attributes](/data-attributes#core-attributes).
+- **One dropdown per option** (Color, Size…), for one-product rows only — `<option value>` is the option value; read the current answer from `selector.optionPicks`. On each change the engine merges the pick over `optionPicks` and sets the selection to the one variant that carries every picked value, or to none. A value with no purchasable variant stays selectable.
+
+When `selector.unitPicks` is not `null`, the shopper picks each unit on its own. Draw one line of option dropdowns per unit, numbered "#1", "#2"… Read that unit's `optionPicks`, and its pick from the selection whose `unitIndex` is the unit's index. Put `data-nameless-unit="{index}"` on each of its `<select>`s.
+
+### Large collections
+
+A collection selector loads its products in batches of 50. `moreProducts` says what's next:
+
+| Value | Meaning |
+| --- | --- |
+| `ready` | Another batch can be loaded |
+| `loading` | It is arriving — draw the button disabled |
+| `failed` | It didn't arrive — the button retries |
+| `none` | Every product is here — draw no button |
+
+While it is not `none`, draw one `<button data-nameless-load-more="{selector.id}">` after the rows. Without it, the runtime still loads more when the last row scrolls into view — but never for rows drawn as `<option>`s. New rows arrive as a new render; keep each row's `id` stable so rows already drawn stay put.
+
+## Selections
+
+```ts
+interface ViewSelection {
+  productId: string;
+  variantId: string;
+  quantity: number;
+  planId: string | null;       // null = one-time purchase
+  soldOut: boolean;            // stock can't cover every unit of this variant in the bundle
+  unitIndex: number | null;    // which unitPicks entry this fills
+  was: Money | null;           // line total before discount; null when nothing was taken off
+  now: Money;                  // line total the shopper pays
+  eachWas: Money | null;       // one unit before discount
+  eachNow: Money;              // one unit: `now` shared over `quantity`, rounded
+  rewardIds: string[];         // rewards that lowered a unit of this line
+  usedUnits: number;           // units some tier used
+  discountedUnits: number;     // units a reward lowered
+}
+```
+
+`usedUnits` is below `quantity` when a tier's `max` capped the line — those units pay full price. `discountedUnits` is below `usedUnits` when a reward's slice lowered only some units ("buy 3, get 1 free"). When `discountedUnits` is below `quantity`, say so — for example `ctx.t("{{count}} of {{quantity}} discounted", …)` — rather than letting `eachNow` stand for every unit.
+
+## Tiers
+
+`view.tiers` is every promise the bundle makes, in the merchant's order. Tiers with the same `offerId` belong together — one ladder, smallest first.
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Goes into `data-nameless-tier-id` |
+| `offerId` | Groups the tiers of one offer |
+| `state` | `"applied"` — checkout charges it. `"met"` — it holds on picked units but isn't charged (another tier or offer took them). `"notMet"` — it doesn't hold, or nothing it counts is picked |
+| `chosen` | The shopper tapped it |
+| `toAddTotal` | Fewest units a tap adds; `0` when a tap adds nothing; `null` when adding can't meet it |
+| `toAdd` | Those units by selector: `{ selectorId, count }[]` |
+| `inStock` | `false` when the picks a tap makes exceed stock. Draw the control disabled |
+| `ifChosen` | The bundle after a tap: `{ summary, selections }`. `null` when a tap can't make it apply, and on a chosen tier |
+| `requirements` | What it asks for — see below |
+| `rewardGroups` | What it gives — see below |
+
+Several tiers can be `applied` at once, one per offer. Highlight a tier with `state === "applied"`.
+
+When several rungs of one ladder are met and none is chosen, the offer prices its highest met rung, as checkout does. Give every rung its own control so the shopper can pick a lower one.
+
+### Requirements — naming a tier
+
+`requirements` is a list of alternative **requirement sets**. Meeting every range of any one set meets the tier — join sets with "or". Each range is one pool:
+
+```ts
+interface ViewCountRange {
+  selectorIds: string[]; // counted together as one pool: "2 to 5 of A and B" holds on 1 A + 2 B
+  min: number;           // fewest units from the pool; 0 when only max is set
+  max: number | null;    // most units that count; the tier takes nothing off units above it
+}
+```
+
+Requirements are worked out with nothing picked, so they don't move while the shopper picks. An empty list means no picks can meet the tier.
+
+Write the tier name from them with the numbers as variables, so the name follows the merchant's next edit and the translation key stays the same. Never type a count into a literal:
+
+| Range | Copy |
+| --- | --- |
+| `max: null` | `ctx.t("{{min}}+ {{what}}", vars)` |
+| `min === max` | `ctx.t("{{min}} {{what}}", vars)` |
+| `min: 0` | `ctx.t("Up to {{max}} {{what}}", vars)` |
+| otherwise | `ctx.t("{{min}} to {{max}} {{what}}", vars)` |
+
+`what` is the headings of `selectorIds` joined with `ctx.t("and")`. Join one set's ranges with " + ", and several sets with `ctx.t("or")`.
+
+### Rewards — what a tier gives
+
+The shopper gets every reward of **exactly one** group in `rewardGroups`. Today every tier has one group. When there are several, join them with `ctx.t("or")` — never as a list the shopper gets in full — and the group with `state: "applied"` is the one checkout charges.
+
+Each reward has `id`, `selectorIds` (what it lowers), `slice`, and an `outcome` to put into words:
+
+| `outcome` | Copy |
+| --- | --- |
+| `{ kind: "percentOff", percent }` | `ctx.t("Save {{percent}}%", …)` or `ctx.t("{{percent}}% off {{what}}", …)` |
+| `{ kind: "amountOff", amount, per: "unit" }` | `ctx.t("{{amount}} off each", …)` |
+| `{ kind: "amountOff", per: "total" }` | `ctx.t("{{amount}} off", …)` |
+| `{ kind: "amountOff", per: "selector" }` | `ctx.t("{{amount}} off {{what}}", …)` |
+| `{ kind: "setPrice", price, per: "total" }` | `ctx.t("All for {{price}}", …)` |
+| `{ kind: "setPrice", per: "unit" }` | `ctx.t("{{price}} each", …)` |
+| `{ kind: "setPrice", per: "selector" }` | `ctx.t("{{what}} for {{price}}", …)` |
+| `{ kind: "unknown" }` | Say nothing, or `ctx.t("Discount")` |
+
+`slice` is `null` when the reward lowers every unit the tier used. Otherwise it is `{ after, maxUnits, sort }`: the units it skips first, and the most it lowers after them, cheapest first. "Buy 3, get 1 free" is 100% off with `{ after: 3, maxUnits: 1 }` — of 4 units, 1 is free.
+
+The outcome is for words only. Never work a price out of it — prices come from `selections`, `summary`, and `ifChosen`. A reward is applied when some selection's `rewardIds` names it.
+
+### Comparing before a tap
+
+`tier.ifChosen.summary` (`was`, `now`, `saved`, `unitCount`) and `tier.ifChosen.selections` (selector id → rows) are the bundle after a tap. Show them on a tier card so the shopper can compare. An add-on tier with nothing picked yet is priced with one unit of each, so its price shows before the pick.
+
+A chosen tier has `ifChosen: null` — tapping it again only clears the choice. Draw it from `selector.selections` and `view.summary` as they are.
+
+Draw a tier as a control when `ifChosen` is not `null` or `chosen` is true. Otherwise draw it as information, without `data-nameless-tier-id`. Write `ctx.t("Add {{count}} more", …)` from a positive `toAddTotal`, or name each selector from `toAdd`.
+
+## Summary
+
+```ts
+interface ViewSummary {
+  was: Money | null;   // before discount; null when nothing is discounted
+  now: Money;          // what the shopper pays
+  saved: Money | null; // was minus now; null when nothing is saved
+  unitCount: number;   // units picked
+}
+```
+
+Take the footer from `view.summary`, never from your own sum of the rows.
+
+## Subscriptions
+
+`view.subscriptions` is `null` when the bundle sells one-time only — the default. Then draw **no** plan control anywhere.
+
+When it is set, draw one plan `<select>` per picked item whose chosen variant has `plans`:
+
+- List the `plans` of **that item's own chosen variant**, each with its `name` and `price.text`. Subscription apps mint a different plan id per variant, so never build a shared list by hand.
+- Offer a one-time option (`value=""`) only when the product's `subscriptionOnly` is false.
+- Mark selected whatever `selection.planId` holds. It is `null` (one-time) until the shopper chooses. Never preselect a plan.
+- Draw no control for a variant with empty `plans`.
+- The selection's prices already reflect the chosen plan.
+
+**One shared plan control** is the alternative, for a design that asks for one subscription choice for the whole bundle. Use it only while `view.subscriptions.sharedPlanOffered` is true — the engine sets it when every selector draws one fixed product on this page.
+
+| Field | Meaning |
+| --- | --- |
+| `sharedPlanOffered` | One choice for the whole bundle is possible |
+| `sharedGroups` | Selling-plan group names every picked item can be bought on now |
+| `selectedGroup` | The chosen group; `null` = one-time |
+
+Offer only `sharedGroups`. When it is empty, say in words that the items share no subscription — don't draw an empty `<select>`. Never draw per-item plan controls beside the shared one. A group with several plans (monthly and fortnightly) resolves to the first plan the group declares, so the shared control can't express delivery frequency.
+
+## Add-to-cart state
+
+See [Renderer function → Add-to-cart button](/renderer-function#add-to-cart-button).
+
+```ts
+interface ViewAddToCart {
+  enabled: boolean;         // false until something is picked, nothing is sold out, no row waits for a pick
+  themeButtonAdds: boolean; // true: the theme's own button adds the bundle; draw no button
+  pressed: boolean;         // pressed at least once
+  adding: boolean;          // the cart call is in flight
+  error: { code: "pickNeeded" | "soldOut" | "refused"; message: string | null } | null;
+}
+```
+
+## Full type
+
+```ts
+interface RendererViewV2 {
+  viewVersion: 2;
+  bundleId: string;
+  title: string; // not for drawing: write your own title with ctx.t
+  selectors: ViewSelector[];
+  tiers: ViewTier[];
+  summary: ViewSummary;
+  subscriptions: ViewSubscriptions | null;
+  addToCart: ViewAddToCart;
+  pageProductId: string | null;
+}
+
+type ViewSelector = ViewProductSelector | ViewCollectionSelector;
+
+interface ViewSelectorBase {
+  id: string;
+  type: "single" | "multi";
+  grouping: "variant" | "product" | "general";
+  startQuantity: number;
+  products: ViewProduct[];
+  selections: ViewSelection[];
+  summary: ViewSummary;
+  optionPicks: Record<string, string>;
+  pickedLast: boolean;
+  pickNeeded: boolean;
+  unitPicks: { optionPicks: Record<string, string>; pickedLast: boolean }[] | null;
+}
+
+interface ViewProductSelector extends ViewSelectorBase {
+  itemType: "product";
+}
+
+interface ViewCollectionSelector extends ViewSelectorBase {
+  itemType: "collection";
+  collection: { handle: string; title: string };
+  asPageProduct: boolean;
+  moreProducts: "none" | "ready" | "loading" | "failed";
+}
+
+interface ViewProduct {
+  id: string;
+  handle: string;
+  title: string;
+  subscriptionOnly: boolean;
+  options: { name: string; values: string[] }[];
+  variants: ViewVariant[];
+  defaultVariantId: string; // first available variant, else the first
+}
+
+interface ViewVariant {
+  id: string;
+  title: string; // e.g. "Red / M"
+  options: { name: string; value: string }[];
+  price: Money;
+  available: boolean;
+  inventory: number | null; // null when Shopify doesn't say
+  image: { url: string; alt: string | null } | null;
+  plans: { id: string; name: string; price: Money }[];
+}
+
+interface ViewTier {
+  id: string;
+  offerId: string;
+  rewardGroups: {
+    id: string;
+    state: "applied" | "notApplied";
+    rewards: ViewReward[];
+  }[];
+  state: "applied" | "met" | "notMet";
+  chosen: boolean;
+  toAddTotal: number | null;
+  toAdd: { selectorId: string; count: number }[];
+  inStock: boolean;
+  ifChosen: { summary: ViewSummary; selections: Record<string, ViewSelection[]> } | null;
+  requirements: ViewCountRange[][];
+}
+
+interface ViewReward {
+  id: string;
+  outcome:
+    | { kind: "percentOff"; percent: number }
+    | { kind: "amountOff"; amount: Money; per: "total" | "selector" | "unit" }
+    | { kind: "setPrice"; price: Money; per: "total" | "selector" | "unit" }
+    | { kind: "unknown" };
+  selectorIds: string[];
+  slice: { after: number; maxUnits: number | null; sort: "cheapest" } | null;
+}
+
+interface ViewSubscriptions {
+  sharedPlanOffered: boolean;
+  sharedGroups: string[];
+  selectedGroup: string | null;
+}
+```
+
+Treat every id as an opaque string: copy it into attributes exactly as the view gives it, and never parse or rebuild it.
+
+## Examples
+
+### Collection rows
+
+One row per product, for a collection selector whose `asPageProduct` is false. Every control on the row carries both the selector id and `data-nameless-product-id`:
+
+```js
+function pickedEntry(sel, productId) {
+  for (var i = 0; i < sel.selections.length; i++) {
+    if (sel.selections[i].productId === productId) return sel.selections[i];
+  }
+  return null;
+}
+
+var rows = sel.products
+  .map(function (product) {
+    var picked = pickedEntry(sel, product.id);
+    var shownId = picked ? picked.variantId : product.defaultVariantId;
+    var options = product.variants
+      .map(function (variant) {
+        return (
+          '<option value="' + esc(variant.id) + '"' +
+          (variant.id === shownId ? " selected" : "") + ">" + esc(variant.title) + "</option>"
+        );
+      })
+      .join("");
+    return (
+      '<li id="nb-' + esc(v.bundleId) + "-row-" + esc(sel.id) + "-" + esc(product.id) + '" class="nb-item">' +
+      '<span class="nb-item__title">' + esc(product.title) + "</span>" +
+      '<select data-nameless-variant-selector="' + esc(sel.id) + '"' +
+      ' data-nameless-product-id="' + esc(product.id) + '">' + options + "</select>" +
+      '<input type="number" min="0" step="1" value="' + (picked ? picked.quantity : 0) + '"' +
+      ' data-nameless-qty-selector="' + esc(sel.id) + '"' +
+      ' data-nameless-product-id="' + esc(product.id) + '">' +
+      "</li>"
+    );
+  })
+  .join("");
+
+var loadMore =
+  sel.moreProducts === "none"
+    ? ""
+    : '<button type="button" class="nb-more" data-nameless-load-more="' + esc(sel.id) + '"' +
+      (sel.moreProducts === "loading" ? " disabled" : "") + ">" +
+      (sel.moreProducts === "failed" ? ctx.t("Try again") : ctx.t("Show more")) +
+      "</button>";
+```
+
+### Tier cards
+
+One card per tier. The card carries only the tier id; the engine works out the quantities. Names come from `requirements`, sentences from `outcome`, prices from `ifChosen`, and what's missing from `toAdd`. `heading` is the helper from the [minimal example](/renderer-function#minimal-example).
+
+```js
+function headingOf(selectorId) {
+  for (var i = 0; i < v.selectors.length; i++) {
+    if (v.selectors[i].id === selectorId) return heading(v.selectors[i]);
+  }
+  return "";
+}
+
+function countText(count) {
+  var what = count.selectorIds.map(headingOf).join(" " + ctx.t("and") + " ");
+  var vars = { min: count.min, max: count.max, what: what };
+  if (count.max === null) return ctx.t("{{min}}+ {{what}}", vars);
+  if (count.min === count.max) return ctx.t("{{min}} {{what}}", vars);
+  if (count.min === 0) return ctx.t("Up to {{max}} {{what}}", vars);
+  return ctx.t("{{min}} to {{max}} {{what}}", vars);
+}
+
+function tierName(tier) {
+  return tier.requirements
+    .map(function (set) { return set.map(countText).join(" + "); })
+    .join(" " + ctx.t("or") + " ");
+}
+
+function rewardSentence(reward, what) {
+  var o = reward.outcome;
+  if (o.kind === "percentOff") return ctx.t("Save {{percent}}%", { percent: o.percent });
+  if (o.kind === "amountOff" && o.per === "unit") return ctx.t("{{amount}} off each", { amount: o.amount.text });
+  if (o.kind === "amountOff" && o.per === "selector") return ctx.t("{{amount}} off {{what}}", { amount: o.amount.text, what: what });
+  if (o.kind === "amountOff") return ctx.t("{{amount}} off", { amount: o.amount.text });
+  if (o.kind === "setPrice" && o.per === "unit") return ctx.t("{{price}} each", { price: o.price.text });
+  if (o.kind === "setPrice" && o.per === "selector") return ctx.t("{{what}} for {{price}}", { what: what, price: o.price.text });
+  if (o.kind === "setPrice") return ctx.t("All for {{price}}", { price: o.price.text });
+  return "";
+}
+
+var tierCards = v.tiers
+  .map(function (tier) {
+    var sentences = tier.rewardGroups
+      .map(function (group) {
+        return group.rewards
+          .map(function (reward) { return rewardSentence(reward, headingOf(reward.selectorIds[0])); })
+          .join(", ");
+      })
+      .join(" " + ctx.t("or") + " ");
+    var after = tier.ifChosen ? tier.ifChosen.summary : null;
+    var price = after
+      ? '<span class="nb-tier__price">' + esc(after.now.text) +
+        (after.saved ? " <small>" + ctx.t("save {{amount}}", { amount: after.saved.text }) + "</small>" : "") +
+        "</span>"
+      : "";
+    var hint = tier.toAdd
+      .map(function (c) {
+        return '<span class="nb-tier__hint">' +
+          ctx.t("Add {{count}} {{what}}", { count: c.count, what: headingOf(c.selectorId) }) + "</span>";
+      })
+      .join("");
+    var tappable = tier.ifChosen !== null || tier.chosen;
+    var tag = tappable ? "button" : "div";
+    return (
+      "<" + tag + ' id="nb-' + esc(v.bundleId) + "-tier-" + esc(tier.id) + '"' +
+      (tappable
+        ? ' type="button" data-nameless-tier-id="' + esc(tier.id) + '"' +
+          ' aria-pressed="' + (tier.state === "applied" ? "true" : "false") + '"' +
+          (tier.inStock ? "" : " disabled")
+        : "") +
+      ' class="nb-tier nb-tier--' + esc(tier.state) + '">' +
+      '<span class="nb-tier__name">' + tierName(tier) + "</span>" +
+      '<span class="nb-tier__reward">' + sentences + "</span>" +
+      price + hint +
+      "</" + tag + ">"
+    );
+  })
+  .join("");
+```
+
+### Per-item plan control
+
+Only when `view.subscriptions` is set. Returns `""` for an item with no plans.
+
+```js
+function planSelect(sel, product, picked) {
+  if (!v.subscriptions || !picked) return "";
+  var variant = null;
+  for (var i = 0; i < product.variants.length; i++) {
+    if (product.variants[i].id === picked.variantId) variant = product.variants[i];
+  }
+  var plans = (variant && variant.plans) || [];
+  if (plans.length === 0) return "";
+
+  var options = product.subscriptionOnly
+    ? ""
+    : '<option value=""' + (picked.planId ? "" : " selected") + ">" + ctx.t("One-time") + "</option>";
+  options += plans
+    .map(function (plan) {
+      return '<option value="' + esc(plan.id) + '"' + (picked.planId === plan.id ? " selected" : "") + ">" +
+        esc(plan.name) + " — " + esc(plan.price.text) + "</option>";
+    })
+    .join("");
+
+  return (
+    '<select class="nb-item__plan" data-nameless-selling-plan-selector="' + esc(sel.id) + '"' +
+    (sel.itemType === "collection" && !sel.asPageProduct
+      ? ' data-nameless-product-id="' + esc(product.id) + '"'
+      : "") +
+    ">" + options + "</select>"
+  );
+}
+```

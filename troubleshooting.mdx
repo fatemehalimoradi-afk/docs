@@ -3,55 +3,73 @@ title: "Troubleshooting"
 description: "Blank widget, missing discount, and common Knit errors"
 ---
 
-Use this page when the widget is missing, add-to-cart fails, or checkout does not show the bundle discount.
+Use this page when the widget is missing, add-to-cart fails, or checkout doesn't show the bundle discount.
 
 ## Checklist
 
 1. Knit is installed and has been **opened once** in Shopify admin.
-2. The bundle is **Active** and includes the product you are testing.
-3. In Shopify admin → **Discounts**, the Knit automatic discount is **Active**.
-4. You are testing a product that actually belongs to that bundle (product match or collection membership).
-5. You waited up to **5 minutes** after the last bundle edit (cache).
+2. The **Nameless Bundles** app embed is on in your theme.
+3. The bundle is **Active**, and **Show this bundle on product pages** is on.
+4. The bundle editor shows **Synced**, not **Syncing with Shopify** or **Sync failed**.
+5. You are testing a product that matches one of the bundle's product sets (the product, a collection it belongs to, or every product).
+6. In Shopify admin → **Discounts**, Knit's automatic discount (title ending in **(DO NOT DELETE)**) is **Active**.
 
 ## Widget does not appear
 
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
-| Blank on a Liquid product page | Theme app extension not enabled, or product not in an active bundle | Enable the app embed in the theme editor. Confirm the bundle is Active and includes this product. |
-| Blank iframe (headless / Tapcart) | Wrong `shop` domain, or embed origin blocked | Use `{store}.myshopify.com`. If the console says refused to connect, the host must allow `https://app.knit-bundle.co`. |
-| "No bundle" / empty widget | No matching active bundle | Add the product (or its collection) to an Active bundle. |
-| Headless JSON `APP_NOT_INSTALLED` | Storefront token not provisioned | Open Knit once in Shopify admin, then retry. |
-| Headless JSON `INVALID_PARAMS` | Missing or invalid `shop` | Pass `shop=your-store.myshopify.com`. |
-| Headless JSON `NOT_FOUND` | Headless not enabled on this deployment | Contact Knit support. |
-| Stale products or old tiers | Cache | Wait up to 5 minutes, then reload. |
-| Console `[nameless] RENDERER_THREW` | Renderer callback threw | Fix the JS asset. The last successful paint stays. See [Renderer function](/renderer-function#when-things-go-wrong). |
-| Console `[nameless] RENDERER_LOAD_ERROR` | CSS fetch or JS `<script>` failed | Treat both assets as required. The widget does not render. |
-| Console `[nameless] RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` on the page | Enable the theme app embed. |
+| Blank on a Liquid product page | App embed off, or the product doesn't match an active bundle | Turn on the **Nameless Bundles** app embed. Confirm the bundle is Active and includes this product |
+| Shows on some products only | **Show on → Selected products' pages** | Check which product sets are selected |
+| A different bundle shows | Several bundles match; the one with the lower **Display priority** shows first. Only one pop-up and one theme-button bundle show per page | Adjust **Display priority** |
+| Widget in the wrong place | No position matched the theme | Set **Widget position → Custom element**, or use the [app block](/shopify-integration#the-app-block) |
+| Old products or tiers after an edit | Sync still running, or the browser kept a copy | Wait for **Synced**, then reload in a new private window |
+| Draft bundle not visible | Drafts are hidden | Add `?nameless_preview=true` to the URL |
+| Blank iframe (headless / Tapcart) | Wrong `shop` domain, or embed origin blocked | Use `{store}.myshopify.com`. If the console says refused to connect, the host must allow `https://app.knit-bundle.co` |
+| Headless JSON `APP_NOT_INSTALLED` | Storefront token not provisioned | Open Knit once in Shopify admin, then retry |
+| Headless JSON `INVALID_PARAMS` | Missing or invalid `shop` | Pass `shop=your-store.myshopify.com` |
+| Headless JSON `NOT_FOUND` | Headless not enabled on this deployment | Contact Knit support |
+| Console `[nameless] RENDERER_THREW` | The renderer threw | Fix the JS code. The last successful paint stays. See [Renderer function](/renderer-function#when-things-go-wrong) |
+| Console `[nameless] RENDERER_LOAD_ERROR` | CSS fetch or JS `<script>` failed | Treat both as required. The widget doesn't render |
+| Console `[nameless] RENDERER_VIEW_VERSION_MISSING` or `RENDERER_VIEW_UNSUPPORTED` | The JS code doesn't declare `{ viewVersion: 2 }` | Ask the assistant to regenerate the widget, or fix the `defineRenderer` call |
+| Console `[nameless] RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` on the page | Turn on the app embed |
+| Admin preview: "This renderer is out of date" | Same as `RENDERER_VIEW_UNSUPPORTED` | Ask the assistant to regenerate it |
 
 ## Add to cart fails
 
-- On Liquid: confirm the theme is not intercepting the widget button, and that ATC override is only on if you intend the theme button to add the bundle. See [Shopify integration](/shopify-integration).
-- On headless: you must handle `addToCart` over `postMessage` and reply with `addToCartResult` within about 10 seconds, or the widget shows `CART_TIMEOUT`. See [Headless Bundles API](/headless-bundles-api#postmessage-bridge).
-- On Tapcart: publish the app after adding the block, then test on a device, not only the static canvas.
+- **Liquid, widget button:** the widget shows why — a pick is missing, an item is sold out, or Shopify's own message. A plugin can also block the add (`PLUGIN_BLOCKED` in the console).
+- **Liquid, theme button:** confirm the add-to-cart method is **Using theme button** only if you want the theme's button to add the bundle. When the bundle's lines can't be built, the theme's own add is refused too, and the widget says why. See [Shopify integration](/shopify-integration#add-to-cart-method).
+- **Headless:** handle `addToCart` over `postMessage` and reply with `addToCartResult` within 10 seconds. See [Headless Bundles API](/headless-bundles-api#postmessage-bridge).
+- **Tapcart:** publish the app after adding the block, then test on a device, not only the static canvas.
+
+## Save is refused
+
+"This shop's active bundles need … bytes of the … bytes a discount function can read" means your **Active** bundles together are too large for Shopify's discount function. Deactivate a bundle, make one smaller, or name fewer collections. Drafts don't count.
 
 ## Discount missing at checkout
 
-Items can land in the cart at full price when `__FB_ATC_UID` never reaches Shopify.
+Items land in the cart at full price when the bundle's tag never reaches Shopify, or no tier holds.
 
-1. Confirm the Knit automatic discount is **Active** in Shopify admin → **Discounts**.
-2. Confirm the bundle is **Active**.
-3. Add a bundle from the widget, then open the test order in **Orders**. Each bundle line should show `__FB_ATC_UID` and the discount.
+1. Confirm Knit's automatic discount is **Active** in Shopify admin → **Discounts**.
+2. Confirm the bundle is **Active** (a preview adds at full price).
+3. Add the bundle from the widget, then open the test order in **Orders**. Each bundle line should show `__FB_ATC_UID` and the discount.
+4. Check **Settings → Discount combinations** if another discount is also in the cart.
 
 | Surface | What must happen |
 | --- | --- |
-| Liquid theme | The theme app extension adds the property. Do not strip line-item properties in cart apps. |
-| Headless embed | Your `postMessage` handler must pass `attributes` through as Shopify line-item properties. See [Headless Bundles API](/headless-bundles-api#postmessage-bridge). |
-| Tapcart | The Knit block adds the property. No extra merchant step. |
-| Custom cart / Hydrogen | Your cart API must persist custom line-item properties all the way to checkout. |
+| Liquid theme | The widget adds the property. Don't strip line-item properties in cart apps |
+| Headless embed | Your `postMessage` handler passes `attributes` through as Shopify line-item properties. See [Headless Bundles API](/headless-bundles-api#embed-mode) |
+| Tapcart | The Knit block adds the property. No extra step |
+| Custom cart / Hydrogen | Your cart API keeps custom line-item properties all the way to checkout |
 
 <Warning>
-  If a cart layer, middleware, or checkout app drops unknown line-item properties, the bundle discount will not apply. Keep `__FB_ATC_UID`.
+  If a cart layer, middleware, or checkout app drops unknown line-item properties, the bundle discount won't apply. Keep `__FB_ATC_UID`.
 </Warning>
+
+Other causes:
+
+- **The cart changed after the add.** If the shopper lowers a quantity below the tier's condition, the tier no longer holds. Units above a condition's maximum pay full price by design.
+- **The bundle was edited after the add.** Checkout uses the bundle's current settings. If the tier the cart was tagged with was deleted, or its condition changed, the discount follows the new settings.
+- **The discount only covers some units.** A "buy X, get Y" reward discounts only Y units, cheapest first.
 
 ## What to send support
 
@@ -60,5 +78,5 @@ Include:
 - Shopify domain (`your-store.myshopify.com`)
 - Product handle or ID
 - Endpoint URL or page URL
-- Full JSON error (`{ ok: false, code, message }`) or `[nameless]` / `[knit-bundle]` console logs
-- Screenshot or recording (storefront, Tapcart preview, or device)
+- The full JSON error (`{ ok: false, code, message }`), or the `[nameless]` console logs
+- A screenshot or recording (storefront, Tapcart preview, or device)

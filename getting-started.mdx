@@ -15,20 +15,31 @@ Install Knit, turn on the app embed, then create a bundle. For Tapcart, headless
 1. Install Knit from the [Shopify App Store](https://apps.shopify.com/knit-bundles).
 2. Open **Knit Bundles** from **Apps** in Shopify admin.
 
+Installing creates Knit's automatic discount in Shopify admin → **Discounts**. Its title ends in **(DO NOT DELETE)**. Keep it **Active** — it applies every bundle discount at checkout.
+
 ## Turn on the app embed
 
-The app embed is what shows Knit on your online store. Until it is on, the widget will not appear on product pages.
+The app embed is what runs Knit on your online store. Until it is on, no widget appears on product pages.
 
 On the Knit **Home** page, under **Quick setup guide**:
 
 1. Open **Activate app embed**.
 2. Click **Open app embeds**.
-3. Enable the Knit embed and save.
+3. Turn on the **Nameless Bundles** embed and click **Save**.
 
-You can also do this later from **Online Store → Themes → Customize → App embeds**.
+The step then shows **Status: Active**. You can also do this later from **Online Store → Themes → Customize → App embeds**. If you save a bundle while the embed is off, the editor shows an **Enable app embed** button.
 
 ## Create a bundle
 
-Back on **Home**, under **Quick setup guide**, click **Create bundle**.
+On **Home**, under **Quick setup guide**, click **Create bundle**. That opens **Choose bundle type**.
 
-That opens the editor. Follow [Create a bundle](/create-a-bundle) to add product sets, conditions, and rewards, then set the bundle to **Active** and save.
+- Pick a bundle type card and click **Choose** to fill in a ready form.
+- Or click **Build with AI** to describe the bundle to the Bundle Engine.
+
+Follow [Create a bundle](/create-a-bundle), set the status to **Active**, and save.
+
+## Check it on your store
+
+Open a product page the bundle shows on. The widget should appear, and adding the bundle should show the discount in the cart and at checkout.
+
+To see a **Draft** bundle on your store before you activate it, add `?nameless_preview=true` to the product page URL. Previews don't get the checkout discount.

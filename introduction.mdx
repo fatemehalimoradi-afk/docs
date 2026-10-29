@@ -3,14 +3,24 @@ title: "Introduction"
 description: "What Knit Bundles is"
 ---
 
-Knit Bundles is a Shopify app for merchandising offers on product pages. You create each offer in Shopify admin from product sets, conditions, and rewards — there are no separate bundle types. Both the bundle logic and its appearance are fully customizable, so you can build the exact bundle experience you need. Shoppers see it on the product page, and the discount is applied at Shopify checkout.
+Knit Bundles is a Shopify app for selling product bundles with automatic discounts. Shoppers pick the bundle on the product page, and the discount is applied at Shopify checkout.
+
+You create a bundle in two ways:
+
+- **From a bundle type** — pick a ready form such as **Fixed bundle**, fill it in, and Knit builds both the discount logic and the widget.
+- **With the Bundle Engine** — describe the bundle to the AI, or build it by hand. You control every piece: the products, the offers and their tiers, the conditions, the rewards, and the widget's code.
+
+Either way, every bundle is the same model underneath: **product sets**, **offers** made of **tiers**, **conditions**, **rewards**, and the **widget**.
 
 <CardGroup cols={2}>
   <Card title="Getting started" icon="rocket" href="/getting-started">
-    Install from the App Store listing, create an active bundle, confirm it on the product page.
+    Install Knit, turn on the app embed, create your first bundle.
   </Card>
   <Card title="Bundle concepts" icon="cubes" href="/bundle-concepts">
-    Product sets, conditions, rewards, and the widget.
+    Product sets, offers, tiers, conditions, rewards, and the widget.
+  </Card>
+  <Card title="Widget" icon="code" href="/widget">
+    Write the renderer and CSS, and extend add-to-cart with plugins.
   </Card>
   <Card title="Integrations" icon="puzzle-piece" href="/integrations">
     Connect Knit to Tapcart, headless storefronts, and other apps.

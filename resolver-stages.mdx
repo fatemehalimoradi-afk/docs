@@ -1,9 +1,9 @@
 ---
 title: "Resolver stages"
-description: "Wrap the PDP add-to-cart override pipeline"
+description: "Wrap the pipeline that lets the theme's add-to-cart button add the bundle"
 ---
 
-When a bundle runs with `meta.atcOverride`, the host intercepts the theme’s own add-to-cart via fetch, XHR, and DOM click/submit interceptors. Each step of that pipeline is a **resolver stage** you can wrap:
+When a bundle's add-to-cart method is the **theme button**, the host intercepts the theme's own add-to-cart through fetch, XHR, and DOM click, keydown, and submit interceptors, and adds the bundle's lines instead. Each step of that pipeline is a **resolver stage** you can wrap:
 
 ```js
 window.nameless.use({
@@ -21,13 +21,13 @@ window.nameless.use({
 
 | Stage | Purpose | Default return | Timeout |
 | --- | --- | --- | --- |
-| `resolveTargetForm` | Locate the theme’s product form | `HTMLFormElement` or `null` | 1500ms |
-| `resolveProductSelection` | Read variant / quantity from the PDP form | `{ variantId?, quantity?, productId? }` | 1500ms |
+| `resolveTargetForm` | Locate the theme's product form | `HTMLFormElement` or `null` | 1500ms |
+| `resolveProductSelection` | Read variant and quantity from the product form | `{ variantId?, quantity?, productId? }` | 1500ms |
 | `shouldOverride` | Decide whether to swap this add request | `true` (must return a boolean) | 1500ms |
 | `buildPayload` | Build the cart payload from bundle state | `{ ok, items, lines, … }` | 500ms |
 | `transformCartRequest` | Rewrite the `/cart/add.js` request body | rebuilt request | 500ms |
 | `transformCartResponse` | Rewrite the cart response | synthesized response | 500ms |
-| `runPostAdd` | Post-add side effects (drawer, `after` hooks) | `void` | 1500ms |
+| `runPostAdd` | Post-add side effects (cart drawer, `after` hooks) | `void` | 1500ms |
 
 Every resolver receives `(ctx, next)`:
 
@@ -35,18 +35,48 @@ Every resolver receives `(ctx, next)`:
 | --- | --- |
 | `bundleId` | Bundle being added |
 | `engine` | Live engine instance for that bundle |
-| `pageProductId` | Current PDP product GID, when on a product page |
+| `pageProductId` | Current product page's product id |
 | `pdpCoupledSelectorIds` | Selectors coupled to the page product |
 | `trigger` | `"click"`, `"submit"`, `"full-page"`, or `"fallback"` |
 | `transport` | `"fetch"`, `"xhr"`, or `"internal"` |
-| `stage` | Fully-qualified stage name, e.g. `atcOverride:buildPayload` |
-| `form`, `selection`, `request`, `payload`, `response` | Populated from the stage onward |
+| `stage` | Fully qualified stage name, e.g. `atcOverride:buildPayload` |
+| `form`, `selection`, `request`, `payload`, `response` | Filled in from the stage that produces them onward |
 | `debug`, `log` | Debug flag and logger, both driven by `window.nameless.__overrideDebug` |
 
-`next()` runs the rest of the chain and ultimately Knit’s built-in behavior — call it and adjust, rather than reimplementing a stage. If your resolver throws, times out, or returns a shape the host rejects, the host records a warning and falls through to `next()`, so a broken resolver degrades to default behavior instead of breaking the cart.
+`next()` runs the rest of the chain and finally Knit's built-in behavior — call it and adjust, rather than reimplementing a stage. If your resolver throws, times out, or returns a shape the host rejects, the host records a warning and falls through to `next()`, so a broken resolver degrades to the default instead of breaking the cart.
 
-<Note>
-  Override is designed for a main `productSingle` product plus optional `collectionMulti` picks. Collection-only bundles are not a supported override shape.
-</Note>
+Bundle adds made by Knit itself carry the request header `X-Nameless-Internal: 1`, which is how the interceptors tell them apart from the theme's adds.
 
-Branch the renderer footer on `snapshot.meta.atcOverride` — omit your own ATC button when it is `true`. See [Renderer function](/renderer-function#pdp-add-to-cart-override) and [Shopify integration](/shopify-integration#add-to-cart-override).
+## When the override runs
+
+The host installs the interceptors after the bundle's widget has drawn — never at mount. A widget that throws, or that the host refuses, leaves the theme's button alone. All of these must hold:
+
+1. The bundle's add-to-cart method is the theme button, or the page is the bundle's own [Bundle as Product](/shopify-integration#bundle-as-product) page. A popup never runs it.
+2. The page has a product.
+3. A selector of the bundle matches the page's product, or the page is the bundle's own product page.
+
+One bundle takes the theme button per page: the first in display order.
+
+## Coupling to the page's product
+
+The page's variant and quantity feed the selectors that stand for the page's product — a product selector for that product, or a collection selector drawn as the page's product. A selector that lists a collection's products is never coupled just because the page's product is in that collection; its picks come from the widget.
+
+While the shopper browses, the coupled selectors stay at quantity `0` in the cart state, so the page's product is not added twice. For display, the host overlays the theme form's variant and quantity, so the view's prices and tiers already reflect what the shopper sees.
+
+The theme form's quantity adds that many **bundles**: quantity N adds N copies of the bundle's lines, each copy with its own add-to-cart id, so checkout discounts each.
+
+## Supported shapes
+
+The theme button is designed for **a main product plus optional picks**:
+
+| Shape | Supported |
+| --- | --- |
+| A product selector for the page's product, plus collection picks from the widget | Yes — the main use case |
+| A collection selector drawn as the page's product | Yes |
+| Only a product selector for the page's product | Yes |
+| Only a collection selector that lists products, with the page's product in it | No — the page's product is not added to the picks |
+| The main product only inside a collection list, with no selector of its own | No — give the page's product its own product selector |
+
+When the bundle's lines can't be built (a pick is sold out, a plan is refused), the theme's own add of the page's product is refused too, and the widget says why. When Shopify refuses the lines, or adds fewer than asked, the widget shows Shopify's own message.
+
+Draw no add-to-cart button of your own when `view.addToCart.themeButtonAdds` is `true`. See [Renderer function](/renderer-function#add-to-cart-button) and [Shopify integration](/shopify-integration#add-to-cart-method).
