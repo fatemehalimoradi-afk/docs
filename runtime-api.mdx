@@ -33,7 +33,7 @@ window.nameless.subscribe("bundles", function (views) {
 });
 ```
 
-`views` holds the [view](/renderer-view) each drawn bundle was last handed — the same objects as `window.nameless.snapshot`. `"bundles"` is the only topic. A bundle no widget draws is not listed. Branch on `view.viewVersion`.
+`views` holds the [view](/renderer-view) each drawn bundle was last handed — the same objects as `window.nameless.snapshot`. `"bundles"` is the only topic. A bundle no widget draws is not listed.
 
 You read views, never engine state or the bundle's rules.
 

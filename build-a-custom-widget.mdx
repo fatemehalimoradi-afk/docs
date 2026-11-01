@@ -1,0 +1,73 @@
+---
+title: "Build a custom widget"
+description: "From an empty bundle to a verified checkout discount, step by step"
+---
+
+This walkthrough builds a "buy more, save more" bundle with your own widget code, then checks every step through to the order. It takes about 20 minutes.
+
+You need Knit installed with the **Nameless Bundles** app embed on — see [Getting started](/getting-started).
+
+<Steps>
+  <Step title="Create the bundle">
+    In Knit, click **Create bundle** → **Build with AI**, then choose **Make it manually here**.
+
+    In the **Form** tab:
+
+    1. **Name**: `Walkthrough`. **Discount label**: `Buy more, save more`.
+    2. Under **Products used in logic**, **Add product** and pick a test product with a few variants. Set **Matching items must be** to **The same variant**.
+    3. **Set up an offer for this bundle**. In Tier #1 add a condition **At least** 2 from that product, and a reward **Percentage discount** 10% on it.
+    4. **Add tier**. In Tier #2: **At least** 4, **Percentage discount** 20%.
+
+    Leave the status on **Draft** and save.
+  </Step>
+  <Step title="Add the widget code">
+    Open **Display options → Product detail page → Code**.
+
+    - Paste the [minimal example](/renderer-function#minimal-example) into **JS code**.
+    - Paste this into **CSS code**:
+
+    ```css
+    [data-nameless-widget] .nb-bundle { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; font-family: inherit; }
+    [data-nameless-widget] .nb-item { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    [data-nameless-widget] .nb-bundle__atc { width: 100%; margin-top: 0.75rem; padding: 0.75rem; }
+    ```
+
+    Save. The **Preview** on the right draws the widget for the product.
+  </Step>
+  <Step title="Add tier cards">
+    The minimal example shows the row and the total but not the tiers. Add the [tier cards](/renderer-view#tier-cards) helpers inside the renderer function, and put `tierCards` into the markup above the list:
+
+    ```js
+    '<div class="nb-tiers">' + tierCards + "</div>" +
+    ```
+
+    Save and check the **Preview**: two cards, "2+" and "4+", each with its price after the tap. Tap one — the quantity jumps to meet it and the card shows as applied.
+  </Step>
+  <Step title="Preview on your store">
+    Open the product page with `?nameless_preview=true` at the end of the URL. The widget appears below the theme's add-to-cart button (the default **Widget position**).
+
+    Open the browser console and run:
+
+    ```js
+    window.nameless.subscribe("bundles", console.log);
+    ```
+
+    You see the [view](/renderer-view) each time you change a pick. Check that `tiers[].state` follows your quantity and that `summary.saved` appears at 2 or more.
+
+    A preview adds to the cart at **full price** — the discount covers Active bundles only.
+  </Step>
+  <Step title="Activate and test the discount">
+    Set **Status: Active** and save. Wait for **Synced**.
+
+    On the product page (no preview parameter), set quantity 4 and click the widget's add-to-cart button. In the cart, the line should show 20% off.
+  </Step>
+  <Step title="Verify the order">
+    Complete a test order. In Shopify admin → **Orders**, open it: the line shows the `__FB_ATC_UID` property and the bundle discount under the discount label you set.
+
+    If the discount is missing, work through [Troubleshooting](/troubleshooting#discount-missing-at-checkout).
+  </Step>
+</Steps>
+
+## Before you ship
+
+Run through the [pre-ship checklist](/runtime-api#pre-ship-checklist): one `defineRenderer` with `{ viewVersion: 2 }`, no event listeners or money arithmetic in the renderer, every view string escaped, and every word through `ctx.t`.

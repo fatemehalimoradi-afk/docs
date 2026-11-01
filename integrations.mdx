@@ -1,13 +1,37 @@
 ---
 title: "Integrations"
-description: "Connect Knit to other apps"
+description: "Choose how Knit reaches your storefront, and what you build"
 ---
 
-Knit’s storefront on a normal Shopify theme is the app itself. Anything else is an **integration**.
+Knit works on a Shopify theme out of the box. Every other surface is an **integration**. Before you start, pick a path — they differ in what your team builds and what Knit guarantees.
+
+## Choose a path
+
+| Path | You build | Knit handles |
+| --- | --- | --- |
+| **Bundle type** on a Shopify theme | Nothing — fill in a form | Everything |
+| **Custom widget** on a Shopify theme ([Widget](/widget)) | The widget's HTML and CSS | Picks, prices, tiers, cart, discount |
+| **Headless embed** ([Headless](/headless-bundles-api)) | An iframe and a cart handler | Picks, prices, tiers, discount tag, discount |
+| **Tapcart** ([Tapcart](/tapcart)) | Nothing — place the block | Everything; Tapcart's cart adds the lines |
+| **Headless Data API** ([Headless](/headless-bundles-api)) | The whole UI, price display, discount tag, and cart | Bundle data, and the discount at checkout |
+
+Who owns each responsibility:
+
+| | Bundle type | Custom widget | Headless embed | Tapcart | Data API |
+| --- | --- | --- | --- | --- | --- |
+| Selection state (picks, tier choice) | Knit | Knit | Knit | Knit | **You** |
+| Prices and savings shown | Knit | Knit (you draw them) | Knit | Knit | **You** |
+| Discount tag on cart lines (`__FB_ATC_UID`) | Knit | Knit | Knit | Knit | **You** |
+| Adding lines to the cart | Knit | Knit | **You** | Tapcart | **You** |
+| Discount at checkout | Knit | Knit | Knit | Knit | Knit |
+
+The discount at checkout is always applied by Knit's Shopify discount function, from the bundle's own rules. On every path except the Data API, the price the shopper sees comes from the same engine checkout uses. With the Data API, your UI only approximates it — if your price or tag disagrees with the rules, checkout wins and the shopper sees a different price. Prefer the embed unless you need full control of the UI.
+
+Bundles are created and edited in Knit admin. The public API reads bundles and embeds them; it doesn't create or edit them.
 
 <CardGroup cols={2}>
   <Card title="Tapcart" icon="mobile" href="/tapcart">
-    Add the Knit Bundle block to your Tapcart product page. Same bundles, Tapcart’s cart, discount at Shopify checkout.
+    Add the Knit Bundle block to your Tapcart product page.
   </Card>
   <Card title="Headless" icon="code" href="/headless-bundles-api">
     Embed the widget or use the bundle data API on a custom storefront, Hydrogen, or mobile app.

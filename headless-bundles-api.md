@@ -235,7 +235,7 @@ Returns a self-contained HTML page that loads the Knit widget runtime, fetches t
 
 ### What the embed renders
 
-- Every bundle that applies to the product, except those hidden on product pages and those shown as a popup. **Draft bundles are included** and get no discount at checkout.
+- Every bundle that applies to the product, except those hidden on product pages and those shown as a popup.
 - **Show on → Selected products' pages** is not applied: any product set can make a bundle show.
 - One-time purchases only: subscription plans are not offered in the embed.
 - Always the widget's own add-to-cart button. The theme-button override doesn't apply.
@@ -259,7 +259,7 @@ The embed page is served with `Cache-Control: no-store` and **without** `X-Frame
 
 The embed iframe talks to your page over `window.postMessage`. It renders the widget and manages selection state itself, but it can't add to your cart — that's your job.
 
-Every message has `source`, `v` (version), and `type`. Ignore any message whose `source` or `v` you don't recognize.
+Every message has `source`, `v` (always `1`), and `type`. Ignore any message whose `source` or `v` doesn't match.
 
 ### From the iframe to your page
 
@@ -281,7 +281,7 @@ Every message has `source`, `v` (version), and `type`. Ignore any message whose 
 | --- | --- | --- |
 | `addToCartResult` | `{ requestId, ok, code?, message? }` | Your answer to an `addToCart`. Echo the same `requestId`. On failure send `ok: false` with an optional `code` and `message` |
 
-If you don't reply within **10 seconds**, the add fails and the widget shows an error.
+If you don't reply within **10 seconds**, the add fails and the widget shows an error. A reply sent to any origin other than the Knit app origin is never delivered, so always reply to `https://app.knit-bundle.co`.
 
 ### `lineItems` shape
 
@@ -298,46 +298,88 @@ If you don't reply within **10 seconds**, the add fails and the widget shows an 
 ];
 ```
 
-### Minimal host handler
+### Host handler
+
+This handler checks that every message comes from the Knit iframe, validates its fields, adds the lines with the Shopify Storefront API, and replies only to the Knit origin. Replace the three constants at the top with your own values.
 
 ```html
 <script>
+  const KNIT_ORIGIN = "https://app.knit-bundle.co";
+  const STOREFRONT_API = "https://your-store.myshopify.com/api/2026-07/graphql.json";
+  const STOREFRONT_TOKEN = "your-storefront-access-token"; // a public Storefront API token
   const IFRAME = document.getElementById("knit-bundle");
-  const IFRAME_SOURCE = "nameless-bundle";
-  const HOST_SOURCE = "nameless-bundle-host";
-  const VERSION = 1;
 
   window.addEventListener("message", async (event) => {
+    // Only the Knit iframe may talk to this handler.
+    if (event.origin !== KNIT_ORIGIN || event.source !== IFRAME.contentWindow) return;
     const msg = event.data;
-    if (!msg || msg.source !== IFRAME_SOURCE || msg.v !== VERSION) return;
+    if (!msg || msg.source !== "nameless-bundle" || msg.v !== 1) return;
 
-    switch (msg.type) {
-      case "resize":
-        IFRAME.style.height = msg.height + "px";
-        break;
+    if (msg.type === "resize" && Number.isFinite(msg.height) && msg.height >= 0) {
+      IFRAME.style.height = msg.height + "px";
+      return;
+    }
 
-      case "addToCart": {
-        try {
-          // Add msg.lineItems to YOUR cart, keeping `attributes`
-          // as Shopify line-item properties.
-          await myCart.add(msg.lineItems);
-          reply(msg.requestId, true);
-        } catch (err) {
-          reply(msg.requestId, false, "CART_REJECTED", String(err));
-        }
-        break;
+    if (msg.type === "addToCart") {
+      if (typeof msg.requestId !== "string" || !validLineItems(msg.lineItems)) return;
+      try {
+        await addToCart(msg.lineItems);
+        reply(msg.requestId, true);
+      } catch (err) {
+        reply(msg.requestId, false, "CART_REJECTED", err instanceof Error ? err.message : String(err));
       }
     }
   });
 
+  function validLineItems(items) {
+    return (
+      Array.isArray(items) &&
+      items.length > 0 &&
+      items.every(
+        (item) =>
+          Number.isSafeInteger(item.variantId) &&
+          Number.isInteger(item.quantity) &&
+          item.quantity > 0 &&
+          Array.isArray(item.attributes) &&
+          item.attributes.every((a) => typeof a.key === "string" && typeof a.value === "string"),
+      )
+    );
+  }
+
+  async function addToCart(lineItems) {
+    const lines = lineItems.map((item) => ({
+      merchandiseId: "gid://shopify/ProductVariant/" + item.variantId,
+      quantity: item.quantity,
+      attributes: item.attributes, // keep __FB_ATC_UID, or checkout applies no bundle discount
+    }));
+    const res = await fetch(STOREFRONT_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": STOREFRONT_TOKEN,
+      },
+      body: JSON.stringify({
+        query: `mutation ($cartId: ID!, $lines: [CartLineInput!]!) {
+          cartLinesAdd(cartId: $cartId, lines: $lines) { userErrors { message } }
+        }`,
+        variables: { cartId: await currentCartId(), lines },
+      }),
+    });
+    const json = await res.json();
+    const errors = (json.errors || []).concat(json.data?.cartLinesAdd?.userErrors || []);
+    if (!res.ok || errors.length > 0) throw new Error(errors[0]?.message || "Cart request failed");
+  }
+
   function reply(requestId, ok, code, message) {
     IFRAME.contentWindow.postMessage(
-      { source: HOST_SOURCE, v: VERSION, type: "addToCartResult", requestId, ok, code, message },
-      "*",
+      { source: "nameless-bundle-host", v: 1, type: "addToCartResult", requestId, ok, code, message },
+      KNIT_ORIGIN,
     );
   }
 </script>
 ```
+
+`currentCartId()` is your storefront's own: return the id of the shopper's cart, creating one with `cartCreate` if they have none. On another cart API, replace `addToCart` and keep the rest — see [Embed mode](#embed-mode) for how each API carries `attributes`.
 
 ---
 
@@ -361,7 +403,7 @@ If the property is missing, renamed, or stripped by your cart layer, the add suc
 | Segment | Source | Role |
 | --- | --- | --- |
 | `bundleId` | `bundle.id` | Which bundle definition to load |
-| `version` | `bundle.version` | Recorded for reference. Detection doesn't use it |
+| `version` | `bundle.version` | The bundle's revision number. Checkout doesn't use it to find the bundle |
 | `tierId` | `offers[].tiers[].id` | The tier this line's add was priced at. Checkout starts from it and only walks **down** the ladder — a tier above the tag is never tried |
 | `selectorId` | `selectors[].id` of **this** line | Which selector the line counts for |
 | `atcId` | One id per add-to-cart (epoch milliseconds) | Groups the lines of one add into one bundle. All lines of one add share it; separate adds use separate ids. Adding N copies of a bundle at once uses `<ms>`, `<ms>-2`, … `<ms>-N` |
@@ -432,7 +474,7 @@ interface BundlesResponse {
 
 interface Bundle {
   id: string;                    // numeric bundle id, as string
-  version: number;               // bumps on every merchant edit
+  version: number;               // revision number; changes on every merchant edit
   title: string;                 // translated for `language` when a translation exists
   handle: string | null;
   type: string;
@@ -444,7 +486,7 @@ interface Bundle {
   selectors: Selector[];
   offers: Offer[];
   pdpDisplay?: PdpDisplay;       // absent when the bundle has no display
-  assets: Asset[];               // legacy; prefer pdpDisplay
+  assets: Asset[];               // empty when pdpDisplay carries the assets; read pdpDisplay first
   translations?: { v: 1; primary?: string; locales: Record<string, Record<string, string>> };
 }
 

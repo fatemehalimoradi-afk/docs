@@ -30,8 +30,8 @@ Use this page when the widget is missing, add-to-cart fails, or checkout doesn't
 | Headless JSON `NOT_FOUND` | Headless not enabled on this deployment | Contact Knit support |
 | Console `[nameless] RENDERER_THREW` | The renderer threw | Fix the JS code. The last successful paint stays. See [Renderer function](/renderer-function#when-things-go-wrong) |
 | Console `[nameless] RENDERER_LOAD_ERROR` | CSS fetch or JS `<script>` failed | Treat both as required. The widget doesn't render |
-| Console `[nameless] RENDERER_VIEW_VERSION_MISSING` | The JS code declares no view version | Ask the assistant to regenerate the widget, or pass `{ viewVersion: 2 }` to `defineRenderer` |
-| Console `[nameless] RENDERER_VIEW_UNSUPPORTED` | The JS code declares a view version the engine doesn't build | Ask the assistant to regenerate the widget, or declare `{ viewVersion: 2 }` |
+| Console `[nameless] RENDERER_VIEW_VERSION_MISSING` | `defineRenderer` was called without `viewVersion` | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
+| Console `[nameless] RENDERER_VIEW_UNSUPPORTED` | `defineRenderer` was called with a `viewVersion` other than `2` | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
 | Console `[nameless] RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` on the page | Turn on the app embed |
 | Admin preview: "This renderer is out of date" | Same as `RENDERER_VIEW_VERSION_MISSING` | Ask the assistant to regenerate it |
 | Admin preview: "This renderer can't be shown" | Same as `RENDERER_VIEW_UNSUPPORTED` | Ask the assistant to regenerate it |

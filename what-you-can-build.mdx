@@ -1,0 +1,79 @@
+---
+title: "What you can build"
+description: "Five storefront experiences, and the engine pieces behind each"
+---
+
+Every Knit bundle is made of the same pieces — [product sets, offers, tiers, conditions, rewards, and the widget](/bundle-concepts). Combining them differently gives very different shopping experiences. Here are five, from simple to rich.
+
+In each, **Knit handles** the same things: working out which tier applies, every price and saving the widget shows, tagging the cart lines, and applying the discount at Shopify checkout.
+
+## 1. Buy more, save more
+
+**The shopper sees** quantity cards on a product page — "1 item", "2 items, save 10%", "4 items, save 20%" — each showing its price after the discount. Tapping a card sets the quantity.
+
+| Engine piece | Setting |
+| --- | --- |
+| Product set | The product, **The same variant** |
+| Offer | One ladder of three tiers |
+| Conditions | **Exactly** 1, **At least** 2, **At least** 4 |
+| Rewards | None, 10%, 20% **Percentage discount** |
+
+**You customize** the card layout, wording, badges ("Most popular"), and colors.
+
+## 2. A fixed set at one price
+
+**The shopper sees** a "complete the look" card with a shirt, trousers, and a belt, a variant picker for each, and one total: "All three for $99".
+
+| Engine piece | Setting |
+| --- | --- |
+| Product sets | One per product |
+| Conditions | **Exactly** 1 from each set, in one tier |
+| Reward | **Set price** $99, **Applies per** **Total**, on all three sets |
+
+**You customize** which products, the picture layout, and whether shoppers pick a variant per item.
+
+## 3. Mix and match
+
+**The shopper sees** a grid of products from a collection, a counter "3 of 6 picked", and a price that drops as they add: 3 for $30, 6 for $54.
+
+| Engine piece | Setting |
+| --- | --- |
+| Product set | The collection, **Any mix** |
+| Offer | Two tiers: **Exactly** 3, **Exactly** 6 |
+| Rewards | **Set price** $30 and $54, **Applies per** **Total** |
+
+**You customize** the grid, the progress message, and how many products load at a time. Items from the whole collection count together toward each tier.
+
+## 4. Buy 3, get 1 free
+
+**The shopper sees** "Buy 3, get 1 free" on a product page. With 4 in the bundle, the cheapest one shows as free.
+
+| Engine piece | Setting |
+| --- | --- |
+| Product set | The product or a collection, **Any mix** |
+| Condition | **At least** 4 |
+| Reward | 100% **Percentage discount** on 1 unit after the first 3, cheapest first |
+
+**You customize** the copy and how the free unit is shown. The bundle type forms and the AI set up the "after 3, discount 1" part.
+
+## 5. Tiers, an add-on, a gift, and free shipping
+
+**The shopper sees** a pillow on its product page with three quantity tiers. The top tier adds a free pillowcase and free shipping. Below the tiers, an optional duvet cover is offered at 15% off — but only with the pillow.
+
+| Engine piece | Setting |
+| --- | --- |
+| Product sets | The pillow, the pillowcase, the duvet cover |
+| Offer 1 | Tiers for 1, 2, and 4 pillows. The top tier also needs 1 pillowcase |
+| Offer 1 rewards | 10% and 20% off the pillows; 100% off the pillowcase; a **Shipping price** of 0 on the top tier |
+| Offer 2 | The duvet cover, **Exactly** 1, with a **trigger** on the pillow |
+| Offer 2 reward | 15% off the duvet cover |
+
+The two offers are independent: the shopper can take the add-on with any tier, and each offer discounts its own items. The trigger means the duvet cover only gets its discount when a pillow is in the cart — whether it was added in this bundle or earlier.
+
+**You customize** the whole layout, the gift line, and the add-on card.
+
+## Where to go next
+
+- Build one of these from a bundle type, or describe it to the Bundle Engine: [Create a bundle](/create-a-bundle).
+- Write your own widget for it: [Build a custom widget](/build-a-custom-widget).
+- Show it outside your Shopify theme: [Integrations](/integrations).

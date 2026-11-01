@@ -29,3 +29,14 @@ Either way, every bundle is the same model underneath: **product sets**, **offer
     Fix a blank widget, a missing discount, or a common setup issue.
   </Card>
 </CardGroup>
+
+## Names you'll see
+
+Knit Bundles is the product. Its engine is called **Nameless** internally, and that name appears wherever a theme or code refers to the engine directly. Keep these identifiers exactly as they are — integrations depend on them:
+
+| Where | Name |
+| --- | --- |
+| Theme editor | The **Nameless Bundles** app embed and the **Nameless** app block |
+| Widget code | `window.nameless`, `data-nameless-*` attributes, `[nameless]` console messages |
+| Cart lines | The `__FB_ATC_UID` line-item property |
+| Shopify admin → Discounts | Knit's automatic discount, title ending in **(DO NOT DELETE)** |
