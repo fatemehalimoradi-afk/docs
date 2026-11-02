@@ -10,10 +10,10 @@ Knit works on a Shopify theme out of the box. Every other surface is an **integr
 | Path | You build | Knit handles |
 | --- | --- | --- |
 | **Bundle type** on a Shopify theme | Nothing — fill in a form | Everything |
-| **Custom widget** on a Shopify theme ([Widget](/widget)) | The widget's HTML and CSS | Picks, prices, tiers, cart, discount |
-| **Headless embed** ([Headless](/headless-bundles-api)) | An iframe and a cart handler | Picks, prices, tiers, discount tag, discount |
-| **Tapcart** ([Tapcart](/tapcart)) | Nothing — place the block | Everything; Tapcart's cart adds the lines |
-| **Headless Data API** ([Headless](/headless-bundles-api)) | The whole UI, price display, discount tag, and cart | Bundle data, and the discount at checkout |
+| [**Custom widget**](/widget) on a Shopify theme | The widget's HTML and CSS | Picks, prices, tiers, cart, discount |
+| [**Headless embed**](/headless-bundles-api) | An iframe and a cart handler | Picks, prices, tiers, discount tag, discount |
+| [**Tapcart**](/tapcart) | Nothing — place the block | Everything; Tapcart's cart adds the lines |
+| [**Headless Data API**](/headless-bundles-api) | The whole UI, price display, discount tag, and cart | Bundle data, and the discount at checkout |
 
 Who owns each responsibility:
 
@@ -21,7 +21,7 @@ Who owns each responsibility:
 | --- | --- | --- | --- | --- | --- |
 | Selection state (picks, tier choice) | Knit | Knit | Knit | Knit | **You** |
 | Prices and savings shown | Knit | Knit (you draw them) | Knit | Knit | **You** |
-| Discount tag on cart lines (`__FB_ATC_UID`) | Knit | Knit | Knit | Knit | **You** |
+| Discount tag on cart lines (`__FB_ATC_UID`) | Knit | Knit | Knit writes it; **you** keep it on the lines | Knit | **You** write it |
 | Adding lines to the cart | Knit | Knit | **You** | Tapcart | **You** |
 | Discount at checkout | Knit | Knit | Knit | Knit | Knit |
 
