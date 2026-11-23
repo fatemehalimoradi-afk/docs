@@ -54,6 +54,8 @@ var atc = await window.nameless.dispatch("addToCart", { bundleId: "…" });
 | `selectionPlanChange` | `{ bundleId, changes: SelectionChange[] }` | `DispatchResult` | batch button |
 | `sellingPlanChange` | `{ bundleId, selectorId, sellingPlanId, productId? }` | `DispatchResult` | `data-nameless-selling-plan-selector` |
 | `sellingPlanGroupChange` | `{ bundleId, groupName }` | `DispatchResult` | `data-nameless-selling-plan-group-selector` |
+| `sharedSellingPlanChange` | `{ bundleId, sellingPlanId }` | `DispatchResult` | `data-nameless-shared-selling-plan-selector` |
+| `variantLineChange` | `{ bundleId, selectorId, productId, variantId, quantity }` | `DispatchResult` | `data-nameless-variant-line` |
 | `loadMoreProducts` | `{ bundleId, selectorId }` | `Promise<DispatchResult>` | `data-nameless-load-more` |
 | `addToCart` | `{ bundleId }` | `Promise<AddToCartResult>` | `data-nameless-atc` |
 
@@ -67,6 +69,7 @@ type AddToCartResult =
       code: string;
       message: string;
       shopperMessage?: string; // the cart's own sentence, already in the shopper's language
+      unmetClauses?: Array<{ offerId: string; clauseId: string; selectorIds: string[] }>; // with UNMET_OFFER_CLAUSE
     };
 // Both shapes can also carry pluginWarnings from plugin hooks.
 ```
@@ -76,7 +79,10 @@ Behavior worth knowing:
 - **`chooseTier`** is the whole message: the engine makes the smallest change to the picks that meets the tier. It refuses with `TIER_NOT_CHOOSABLE` when the tier isn't chosen and still wouldn't apply (its `ifChosen` is `null`). See [Tier controls](/data-attributes#tier-controls).
 - **`selectionPlanChange`** sets several picks at once and keeps the chosen tier while the picks still meet it. Each change is `{ selectorId, quantity, variantId?, productId? }`; at most 32, with no selector and product pair twice, or the action fails with `INVALID_PAYLOAD`. To also choose a tier, send `chooseTier` next.
 - **`sellingPlanChange`** sets one item's plan; `sellingPlanId: null` means one-time. Refused while `view.subscriptions` is `null`, for a plan the chosen variant isn't sold on, with `UNKNOWN_SELECTOR` when nothing is picked on the row, and with `WRONG_SELECTOR_KIND` on a selector picked unit by unit.
-- **`sellingPlanGroupChange`** puts every selected item on one selling-plan group, each resolving its own plan in it; `groupName: null` means one-time. Groups match by name, since plan ids differ per variant. Refused while `view.subscriptions` is `null`, with `WRONG_SELECTOR_KIND` unless `sharedPlanOffered`, whole with `GROUP_NOT_SHARED` when any selected item can't be bought on that group, and with `UNKNOWN_SELECTOR` when nothing is selected.
+- **`sellingPlanGroupChange`** puts every selected item on one selling-plan group, each resolving its own plan in it; `groupName: null` means one-time. Groups match by name, since plan ids differ per variant. Refused while `view.subscriptions` is `null`, with `WRONG_SELECTOR_KIND` unless `sharedPlanOffered`, whole with `GROUP_NOT_SHARED` when any selected item can't be bought on that group, and with `UNKNOWN_SELECTOR` when nothing is selected. On a selector picked unit by unit, every unit goes on the group.
+- **`sharedSellingPlanChange`** puts every selected item on the plan from `view.subscriptions.sharedPlans` with that id, each on its own product's plan of the same group and name; `null` means one-time. Refused whole with `PLAN_NOT_SHARED` for an id not in `sharedPlans`, otherwise like `sellingPlanGroupChange`.
+- **`variantLineChange`** sets one variant line of a collection product; `quantity: 0` removes it. Only on a collection selector with `type: "multi"` (else `WRONG_SELECTOR_KIND`).
+- **`addToCart`** is refused before the cart is called with `EMPTY_SELECTION` while a row has no variant, and with `UNMET_OFFER_CLAUSE` while an offer-wide condition isn't met on the picks; `unmetClauses` names those conditions. The view shows both as `pickNeeded`.
 - Before the runtime installs, every action returns `{ ok: false, code: "NOT_READY", message }` — as a plain object, except `addToCart` and `loadMoreProducts`, which return a promise of it.
 
 Failure codes: `NOT_READY`, `UNKNOWN_ACTION`, `INVALID_PAYLOAD`, `INVALID_QUANTITY`, `UNKNOWN_BUNDLE`, `UNKNOWN_SELECTOR`, `UNKNOWN_VARIANT`, `UNKNOWN_TIER`, `TIER_NOT_CHOOSABLE`, `HANDLER_THREW`, `EMPTY_SELECTION`, `UNMET_OFFER_CLAUSE`, `VARIANT_UNAVAILABLE`, `CART_HTTP_ERROR`, `CART_REJECTED`, `PLUGIN_BLOCKED`, `WRONG_SELECTOR_KIND`, `UNKNOWN_SELLING_PLAN`, `SUBSCRIPTIONS_DISABLED`, `GROUP_NOT_SHARED`, `PLAN_NOT_SHARED`, `UNKNOWN_UNIT`, `AMBIGUOUS_PRODUCT_LINE`, `LOAD_FAILED`.

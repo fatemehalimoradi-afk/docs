@@ -19,9 +19,13 @@ Controls inside a disabled `<fieldset>`, or carrying `disabled` or `aria-disable
 | `data-nameless-product-id` | each control on a collection row | `product.id` | Says which product of the collection changed. Required on collection rows |
 | `data-nameless-tier-id` | any element that stands for one tier | `tier.id` | On `click`, chooses that tier |
 | `data-nameless-load-more` | `<button>` after a collection's rows | `selector.id` | On `click`, loads the selector's next batch of products |
+| `data-nameless-variant-line` | `<button>` or `<select>` on a collection row | `selector.id` | Adds, steps, or removes one variant line of that product (see [variant lines](#variant-lines)) |
+| `data-nameless-variant-id` | a variant-line `<button>` | the variant's `id` | Which variant line the button steps |
 | `data-nameless-atc` | `<button>` | `view.bundleId` | On `click`, adds the whole bundle to the cart |
 | `data-nameless-selling-plan-selector` | `<select>` | `selector.id` | On `change`, sets the item's selling plan; `""` is one-time |
-| `data-nameless-selling-plan-group-selector` | `<select>` | (no value) | On `change`, puts every item on one selling-plan group; `""` is one-time |
+| `data-nameless-selling-plan-group-selector` | `<select>` or checkbox | (no value) | On `change`, puts every item on the group named by the selected value; `""` or an unticked checkbox is one-time |
+| `data-nameless-shared-selling-plan-selector` | `<select>` or checkbox | (no value) | On `change`, puts every item on the plan named by the selected value (a `view.subscriptions.sharedPlans[].id`); `""` or an unticked checkbox is one-time |
+| `data-nameless-theme-atc` | `<button>` | (no value) | On `click`, submits the theme's product form, as the theme's own add-to-cart button would. Only on a Shopify theme, while `view.addToCart.themeButtonAdds` is true |
 
 ## Quantity and tier patterns
 
@@ -67,6 +71,18 @@ The alternative to one variant `<select>`: one `<select>` per entry in `product.
 - When `selector.unitPicks` is set, draw one line of option dropdowns per unit and add `data-nameless-unit="{index}"` to each. A dropdown without it picks for every unit of the row.
 - Option dropdowns are for one-product selectors (a product selector, or a collection selector with `asPageProduct: true`). The option change carries no product id, so on collection rows use a variant `<select>` instead.
 
+## Variant lines
+
+On a collection selector with `type: "multi"`, one product can hold several **variant lines** — for example 2 × Red and 1 × Blue of the same shirt. Variant-line controls manage them:
+
+| Markup | Behavior |
+| --- | --- |
+| `<button type="button" data-nameless-variant-line="{selector.id}" data-nameless-product-id="{product.id}" data-nameless-variant-id="{variant.id}" value="+1">` | `+1` / `-1` steps that variant's line; a whole number sets it. `0` removes only that variant |
+| The same button without `data-nameless-variant-id`, `value="0"` | Removes every line of the product |
+| `<select data-nameless-variant-line="{selector.id}" data-nameless-product-id="{product.id}">` with an empty placeholder option and variant ids as values | Adds one unit of the chosen variant, then resets to the placeholder. Keyboard browsing commits on Enter or when the select loses focus |
+
+Once a product has several lines, a product-level quantity or variant control on it is refused with `AMBIGUOUS_PRODUCT_LINE`; a quantity of `0` still removes every line. Draw each line from `selector.selections`, matching both `productId` and `variantId`, and put both in its `id`. A click on a variant-line control inside a tier card doesn't choose the tier.
+
 ## Placement rules
 
 - **One-product selectors** (`itemType: "product"`, or a collection selector with `asPageProduct: true`): one variant `<select>` (or one set of option dropdowns) and one quantity control per selector, and **no** `data-nameless-product-id`.
@@ -90,6 +106,10 @@ The alternative to one variant `<select>`: one `<select>` per entry in `product.
 Draw these only when `view.subscriptions` is not `null`:
 
 - **Per item (default):** one `<select data-nameless-selling-plan-selector="{selector.id}">` per picked item whose chosen variant has plans. Each `<option value>` is a plan id from **that item's own chosen variant** (`variant.plans[].id`); the one-time option is `value=""`. Add `data-nameless-product-id` on collection rows.
-- **Shared (alternative):** one `<select data-nameless-selling-plan-group-selector>` whose `<option value>` is a group name from `view.subscriptions.sharedGroups`, only while `sharedPlanOffered` is true. Never both kinds of control.
+- **Shared (alternative):** one control for the whole bundle, only while `sharedPlanOffered` is true — either `data-nameless-selling-plan-group-selector` with group names from `view.subscriptions.sharedGroups`, or `data-nameless-shared-selling-plan-selector` with plan ids from `view.subscriptions.sharedPlans`. Use the plan control when a group offers several frequencies (monthly and fortnightly) and the shopper should choose. Never draw per-item and shared controls together.
 
 A selector picked unit by unit (`unitPicks` set) can't take a per-item plan. The rules for each are on [Renderer view](/renderer-view#subscriptions).
+
+## Refused add-to-cart event
+
+When the host refuses a press of add-to-cart because a pick is still missing — including a press of the theme's own button, which sits outside the widget — it dispatches a `nameless:add-to-cart-refused` `CustomEvent` (no bubbling) on `[data-nameless-widget="{bundleId}"]`. A page script can listen for it to point the shopper at the missing pick, for example by opening that step.

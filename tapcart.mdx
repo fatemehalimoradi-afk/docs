@@ -40,8 +40,8 @@ If any of these are missing, contact your Fast Bundle 2.0 account manager.
     | --- | --- |
     | App origin override | **Leave blank** (blank = production). Only set this if Fast Bundle 2.0 support asks you to. |
     | Bundle handle, Bundle type | **Leave blank.** They don't currently limit which bundles show; every bundle that matches the product renders. |
-    | Initial height in px | Fallback height until the widget reports its size — what you see on the **static App Studio canvas**. On device the widget sizes to content. Default `600`. |
-    | Debug mode | Console logs and an on-screen diagnostic panel. **Leave blank in production.** |
+    | Initial height in px | Fallback height until the widget reports its size — what you see on the **static App Studio canvas**. On device the widget sizes to content. Default `600`. On a product with no bundle the block keeps this height, so set it lower if many products have none. |
+    | Debug mode | Type `true` or `1` for console logs and an on-screen diagnostic panel. **Shoppers see the panel too — leave it blank in production.** |
   </Step>
   <Step title="Save and publish">
     Save the screen, then **Publish** the app (or push a preview build).
@@ -80,5 +80,5 @@ Then complete a test order. Each bundle line in Shopify admin → **Orders** sho
 Bundle changes in Fast Bundle 2.0 admin can take up to about **6 minutes** to show in the app.
 
 <Note>
-  Placement is product page only. The block does not replace Tapcart's native Add to Cart button. In the app, bundles sell one-time only (no subscription plans), and bundles shown as a popup or hidden on product pages don't appear. **Show on → Selected products' pages** isn't applied in the app. Your Shopify web storefront is unchanged.
+  Placement is product page only. The block does not replace Tapcart's native Add to Cart button. In the app, bundles sell one-time only (no subscription plans), and bundles shown as a popup or hidden on product pages don't appear. **Show on → Selected products' pages** isn't applied in the app. The widget always shows your store's default language and market prices. Your Shopify web storefront is unchanged.
 </Note>

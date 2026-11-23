@@ -38,7 +38,8 @@ The renderer is registered under the file URL the bundle names, so two bundles t
 | `t` | `(source, vars?) => string` | Translates the copy you write |
 | `productUrl` | `(handle) => string \| null` | A product's page in the page's language; `null` where the surface has none |
 | `collectionUrl` | `(handle) => string \| null` | The same for a collection |
-| `params`, `styleVars`, `customCss`, `widgetCopy` | | Used by the built-in Blueprint widgets. A custom renderer can ignore them |
+| `bundlePageUrl` | `string \| null` | The bundle's own page, when a bundle-type widget's settings ask for it. Always `null` for a custom renderer |
+| `params`, `styleVars`, `customCss`, `widgetCopy` | | Used by the built-in bundle-type widgets. A custom renderer can ignore them |
 
 There is no `dispatch` and no engine state in the context: no conditions, no reward rules, no percentages to read. Don't look for them.
 
@@ -207,7 +208,7 @@ window.nameless.defineRenderer(
 | `enabled` | `false` until something is picked, no pick is sold out, and no row waits for a pick. Disable the button, or keep it pressable and point out what is missing once `pressed` is true |
 | `pressed` | The shopper pressed at least once. From then on, name each `pickNeeded` row and each sold-out selection |
 | `adding` | The cart request is in flight. Draw the button with `aria-busy="true" aria-disabled="true"` and a spinner or `ctx.t("Adding to cart…")`, keeping its size. The runtime ignores clicks meanwhile |
-| `error` | The last press added nothing. Say why near the button: `pickNeeded` → ask for the missing picks; `soldOut` → part of the bundle is sold out; `refused` → print `error.message` (the cart's own sentence, already in the shopper's language) when it is not null, else a general message |
+| `error` | The last press added nothing. Say why near the button: `pickNeeded` → ask for the missing picks (this also covers an offer-wide condition that isn't met yet; the affected rows have `pickNeeded`); `soldOut` → part of the bundle is sold out; `refused` → print `error.message` (the cart's own sentence, already in the shopper's language) when it is not null, else a general message |
 
 The widget is redrawn on every change, so anything the runtime might write into the button would be lost. Draw the busy and error states yourself from the view — the runtime writes nothing on failure.
 
@@ -224,6 +225,9 @@ The host logs structured codes prefixed with `[FastBundle]`:
 | `RENDERER_VIEW_VERSION_MISSING` | `defineRenderer` was called without `viewVersion`, or never called | The widget is not run; the theme's page is shown |
 | `RENDERER_VIEW_UNSUPPORTED` | `defineRenderer` was called with a `viewVersion` the host doesn't build | The widget is not run; the theme's page is shown |
 | `RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` mount for this bundle on the page | The renderer is never called |
+| `RENDERER_MISSING` | The bundle names no JS file | The widget is not drawn; the theme's page is shown |
+| `RENDERER_EMPTY` | A bundle-type widget drew nothing (custom renderers don't get this code) | The theme's page is shown |
+| `VIEW_BUILD_FAILED` | The view couldn't be built for this bundle | The widget is not drawn; the theme's page is shown. Contact support |
 
 If the CSS fails, the JS is not run, so treat both assets as required. Stay defensive anyway: guard against empty `selectors`, empty `products`, empty `selections`, `null` images, and `null` money. Write semantic, labelled markup so the widget still works if styling fails.
 

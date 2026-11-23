@@ -235,7 +235,7 @@ Returns a self-contained HTML page that loads the Fast Bundle 2.0 widget runtime
 
 ### What the embed renders
 
-- Every bundle that applies to the product, except those hidden on product pages and those shown as a popup.
+- Every bundle that applies to the product, except those hidden on product pages, those shown as a popup, and those whose tiers can only be met with a product set the embed can't fill (it skips them, so the iframe can be blank).
 - **Show on → Selected products' pages** is not applied: any product set can make a bundle show.
 - One-time purchases only: subscription plans are not offered in the embed.
 - Always the widget's own add-to-cart button. The theme-button override doesn't apply.
@@ -279,7 +279,7 @@ Every message has `source`, `v` (always `1`), and `type`. Ignore any message who
 
 | `type` | Payload | Meaning |
 | --- | --- | --- |
-| `addToCartResult` | `{ requestId, ok, code?, message? }` | Your answer to an `addToCart`. Echo the same `requestId`. On failure send `ok: false` with an optional `code` and `message` |
+| `addToCartResult` | `{ requestId, ok, code?, message? }` | Your answer to an `addToCart`. Echo the same `requestId`. On failure send `ok: false` with an optional `code` and `message`. The widget treats `CART_REJECTED` (also the default when you send no `code`) as a refusal and every other code as `CART_HTTP_ERROR`; your `message` is kept |
 
 If you don't reply within **10 seconds**, the add fails and the widget shows an error.
 

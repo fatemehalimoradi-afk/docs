@@ -71,7 +71,7 @@ A collection selector also has:
 | `"product"`, either type | One product row | `products[0]` | Zero or one entry; one per unit when `unitPicks` is set |
 | `"collection"`, `asPageProduct: true` | One product row, picked like a product selector | `products[0]` | As a product selector |
 | `"collection"` + `"single"` | One row per product; picking one replaces the previous pick | `products` | At most one entry; match by `productId` |
-| `"collection"` + `"multi"` | One row per product | `products` | One entry per picked product; match by `productId` |
+| `"collection"` + `"multi"` | One row per product | `products` | One entry per picked variant line; match by `productId` (and `variantId` when you use [variant lines](/data-attributes#variant-lines)) |
 
 A product selector with `type: "multi"` is still one product row; the shopper mixes variants, one pick per unit when `unitPicks` is set.
 
@@ -236,8 +236,10 @@ When it is set, draw one plan `<select>` per picked item whose chosen variant ha
 | `sharedPlanOffered` | One choice for the whole bundle is possible |
 | `sharedGroups` | Selling-plan group names every picked item can be bought on now |
 | `selectedGroup` | The chosen group; `null` = one-time, or the items are on different groups |
+| `sharedPlans` | Plans every picked unit can be bought on: `{ id, name }[]`. Pick one with the shared plan control |
+| `selectedPlan` | The shared plan every picked unit is on; `null` = one-time, or the units are on different plans |
 
-Offer only `sharedGroups`. When it is empty, say in words that the items share no subscription — don't draw an empty `<select>`. Never draw per-item plan controls beside the shared one. A group control puts each item on the first plan of that group its variant is sold on.
+Offer only `sharedGroups`. When it is empty, say in words that the items share no subscription — don't draw an empty `<select>`. Never draw per-item plan controls beside the shared one. A group control puts each item on the first plan of that group its variant is sold on. To let the shopper choose a frequency, use the shared plan control with `sharedPlans` instead.
 
 ## Add-to-cart state
 
@@ -348,6 +350,8 @@ interface ViewSubscriptions {
   sharedPlanOffered: boolean;
   sharedGroups: string[];
   selectedGroup: string | null;
+  sharedPlans: { id: string; name: string }[];
+  selectedPlan: string | null;
 }
 ```
 

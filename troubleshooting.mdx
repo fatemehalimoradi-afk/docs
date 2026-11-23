@@ -13,6 +13,23 @@ Use this page when the widget is missing, add-to-cart fails, or checkout doesn't
 4. The bundle editor shows **Synced**, not **Syncing with Shopify** or **Sync failed**.
 5. You are testing a product that matches one of the bundle's product sets (the product, a collection it belongs to, or every product).
 6. In Shopify admin → **Discounts**, Fast Bundle 2.0's automatic discount, **FastBundle (DO NOT DELETE)**, is **Active**.
+7. No plan or billing banner is showing in the admin (see [Plan and billing](#plan-and-billing)).
+
+## Plan and billing
+
+Your plan can hide bundles or stop you from activating them. Fast Bundle 2.0 shows a banner in the admin when this happens:
+
+| Banner | What it means | What to do |
+| --- | --- | --- |
+| **Approve your plan to show your bundles again** | Your plan has no active Shopify subscription, so bundles are hidden from shoppers | Click **Approve in Shopify** |
+| **Your plan approval is waiting in Shopify** | You started approving a plan but didn't finish | Click **Finish approval in Shopify**, or choose a plan instead |
+| **Keep your bundles live — upgrade within N days** | You've reached your bundle revenue allowance. Bundles keep running during the grace period | Upgrade to a higher tier before the grace period ends |
+| **Your bundles are paused** | The grace period ended. Bundle displays and discounts are stopped | Upgrade to a tier that covers your bundle revenue, or wait for your next revenue cycle |
+| **Upgrade to activate this bundle** | Your plan doesn't include bundles built with the Bundle Engine's form. You can build and preview it as a **Draft** | Click **Upgrade to Enterprise** to activate it |
+
+## Install didn't create the discount
+
+Fast Bundle 2.0 creates its automatic discount, **FastBundle (DO NOT DELETE)**, when you install. If a discount with that exact title already exists — left by an interrupted install, or created by someone else — the app can't create its own. Delete or rename the old one in Shopify admin → **Discounts**. Fast Bundle 2.0 retries once a day.
 
 ## Widget does not appear
 
