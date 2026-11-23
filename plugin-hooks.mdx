@@ -49,7 +49,7 @@ A block ends the add with dispatch code `PLUGIN_BLOCKED` and the message `"{code
 `lineProperties` are keyed by **selector id** and land on every cart line of that selector as Shopify line-item `properties`. Multiple hooks merge; later hooks win per key. Prefix a key with `_` to keep it hidden from the shopper on themes that hide underscore properties.
 
 <Warning>
-  Never set `__FB_ATC_UID`. Knit writes it after your hooks run on every line a tier priced, replacing yours; on any other line your value would reach checkout and confuse the discount function.
+  Never set `__FB_ATC_UID`. Fast Bundle writes it after your hooks run on every line a tier priced, replacing yours; on any other line your value would reach checkout and confuse the discount function.
 </Warning>
 
 ## `addToCart.after`

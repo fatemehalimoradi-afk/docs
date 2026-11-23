@@ -1,13 +1,13 @@
 ---
 title: "Integrations"
-description: "Choose how Knit reaches your storefront, and what you build"
+description: "Choose how Fast Bundle reaches your storefront, and what you build"
 ---
 
-Knit works on a Shopify theme out of the box. Every other surface is an **integration**. Before you start, pick a path — they differ in what your team builds and what Knit guarantees.
+Fast Bundle works on a Shopify theme out of the box. Every other surface is an **integration**. Before you start, pick a path — they differ in what your team builds and what Fast Bundle guarantees.
 
 ## Choose a path
 
-| Path | You build | Knit handles |
+| Path | You build | Fast Bundle handles |
 | --- | --- | --- |
 | **Bundle type** on a Shopify theme | Nothing — fill in a form | Everything |
 | [**Custom widget**](/widget) on a Shopify theme | The widget's HTML and CSS | Picks, prices, tiers, cart, discount |
@@ -19,19 +19,19 @@ Who owns each responsibility:
 
 | | Bundle type | Custom widget | Headless embed | Tapcart | Data API |
 | --- | --- | --- | --- | --- | --- |
-| Selection state (picks, tier choice) | Knit | Knit | Knit | Knit | **You** |
-| Prices and savings shown | Knit | Knit (you draw them) | Knit | Knit | **You** |
-| Discount tag on cart lines (`__FB_ATC_UID`) | Knit | Knit | Knit writes it; **you** keep it on the lines | Knit | **You** write it |
-| Adding lines to the cart | Knit | Knit | **You** | Tapcart | **You** |
-| Discount at checkout | Knit | Knit | Knit | Knit | Knit |
+| Selection state (picks, tier choice) | Fast Bundle | Fast Bundle | Fast Bundle | Fast Bundle | **You** |
+| Prices and savings shown | Fast Bundle | Fast Bundle (you draw them) | Fast Bundle | Fast Bundle | **You** |
+| Discount tag on cart lines (`__FB_ATC_UID`) | Fast Bundle | Fast Bundle | Fast Bundle writes it; **you** keep it on the lines | Fast Bundle | **You** write it |
+| Adding lines to the cart | Fast Bundle | Fast Bundle | **You** | Tapcart | **You** |
+| Discount at checkout | Fast Bundle | Fast Bundle | Fast Bundle | Fast Bundle | Fast Bundle |
 
-The discount at checkout is always applied by Knit's Shopify discount function, from the bundle's own rules. On every path except the Data API, the price the shopper sees comes from the same engine checkout uses. With the Data API, your UI only approximates it — if your price or tag disagrees with the rules, checkout wins and the shopper sees a different price. Prefer the embed unless you need full control of the UI.
+The discount at checkout is always applied by Fast Bundle's Shopify discount function, from the bundle's own rules. On every path except the Data API, the price the shopper sees comes from the same engine checkout uses. With the Data API, your UI only approximates it — if your price or tag disagrees with the rules, checkout wins and the shopper sees a different price. Prefer the embed unless you need full control of the UI.
 
-Bundles are created and edited in Knit admin. The public API reads bundles and embeds them; it doesn't create or edit them.
+Bundles are created and edited in Fast Bundle admin. The public API reads bundles and embeds them; it doesn't create or edit them.
 
 <CardGroup cols={2}>
   <Card title="Tapcart" icon="mobile" href="/tapcart">
-    Add the Knit Bundle block to your Tapcart product page.
+    Add the Fast Bundle block to your Tapcart product page.
   </Card>
   <Card title="Headless" icon="code" href="/headless-bundles-api">
     Embed the widget or use the bundle data API on a custom storefront, Hydrogen, or mobile app.

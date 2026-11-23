@@ -1,20 +1,20 @@
 ---
 title: "Introduction"
-description: "What Knit Bundles is"
+description: "What Fast Bundle is"
 ---
 
-Knit Bundles is a Shopify app for selling product bundles with automatic discounts. Shoppers pick the bundle on the product page, and the discount is applied at Shopify checkout.
+Fast Bundle is a Shopify app for selling product bundles with automatic discounts. Shoppers pick the bundle on the product page, and the discount is applied at Shopify checkout.
 
 You create a bundle in two ways:
 
-- **From a bundle type** — pick a ready form such as **Fixed bundle**, fill it in, and Knit builds both the discount logic and the widget.
+- **From a bundle type** — pick a ready form such as **Fixed bundle**, fill it in, and Fast Bundle builds both the discount logic and the widget.
 - **With the Bundle Engine** — describe the bundle to the AI, or build it by hand. You control every piece: the products, the offers and their tiers, the conditions, the rewards, and the widget's code.
 
 Either way, every bundle is the same model underneath: **product sets**, **offers** made of **tiers**, **conditions**, **rewards**, and the **widget**.
 
 <CardGroup cols={2}>
   <Card title="Getting started" icon="rocket" href="/getting-started">
-    Install Knit, turn on the app embed, create your first bundle.
+    Install Fast Bundle, turn on the app embed, create your first bundle.
   </Card>
   <Card title="Bundle concepts" icon="cubes" href="/bundle-concepts">
     Product sets, offers, tiers, conditions, rewards, and the widget.
@@ -23,7 +23,7 @@ Either way, every bundle is the same model underneath: **product sets**, **offer
     Write the renderer and CSS, and extend add-to-cart with plugins.
   </Card>
   <Card title="Integrations" icon="puzzle-piece" href="/integrations">
-    Connect Knit to Tapcart, headless storefronts, and other apps.
+    Connect Fast Bundle to Tapcart, headless storefronts, and other apps.
   </Card>
   <Card title="Help" icon="circle-question" href="/help">
     Fix a blank widget, a missing discount, or a common setup issue.
@@ -32,11 +32,11 @@ Either way, every bundle is the same model underneath: **product sets**, **offer
 
 ## Names you'll see
 
-Knit Bundles is the product. Its engine is called **Nameless** internally, and that name appears wherever a theme or code refers to the engine directly. Keep these identifiers exactly as they are — integrations depend on them:
+Fast Bundle is the product. Its engine is called **Nameless** internally, and that name appears wherever a theme or code refers to the engine directly. Keep these identifiers exactly as they are — integrations depend on them:
 
 | Where | Name |
 | --- | --- |
 | Theme editor | The **Nameless Bundles** app embed and the **Nameless** app block |
 | Widget code | `window.nameless`, `data-nameless-*` attributes, `[nameless]` console messages |
 | Cart lines | The `__FB_ATC_UID` line-item property |
-| Shopify admin → Discounts | Knit's automatic discount, title ending in **(DO NOT DELETE)** |
+| Shopify admin → Discounts | Fast Bundle's automatic discount, **FastBundle (DO NOT DELETE)** |

@@ -1,9 +1,9 @@
 ---
 title: "Headless Bundles API"
-description: "Embed the Knit widget or read bundle data on a headless storefront or mobile app"
+description: "Embed the Fast Bundle widget or read bundle data on a headless storefront or mobile app"
 ---
 
-Knit exposes public endpoints for **headless storefronts, mobile apps, and custom integrations** that don't run on a Shopify Liquid theme.
+Fast Bundle exposes public endpoints for **headless storefronts, mobile apps, and custom integrations** that don't run on a Shopify Liquid theme.
 
 There are two ways to integrate:
 
@@ -12,14 +12,14 @@ There are two ways to integrate:
 | **Embed** (fastest) | An iframe that renders the bundle widget and runs all selection and pricing logic | An `<iframe>` and a small `postMessage` handler that forwards add-to-cart to your cart |
 | **Data API** (full control) | Normalized bundle JSON: products, offers, tiers, conditions, rewards | Your own UI, your own pricing display, and your own cart logic — including the discount tag |
 
-Both are served from the **Knit app origin**, not from your `myshopify.com` storefront. See [Why the app origin?](#why-the-app-origin)
+Both are served from the **Fast Bundle app origin**, not from your `myshopify.com` storefront. See [Why the app origin?](#why-the-app-origin)
 
 ---
 
 ## Base URL
 
 ```
-https://app.knit-bundle.co
+https://app.fastbundle.co
 ```
 
 All headless endpoints live under `/headless/*`. Every request names the store with a `shop` query parameter:
@@ -32,7 +32,7 @@ All headless endpoints live under `/headless/*`. Every request names the store w
 
 ## Prerequisites
 
-1. Install Knit. See [Getting started](/getting-started).
+1. Install Fast Bundle. See [Getting started](/getting-started).
 2. Create at least one **Active** bundle.
 3. Open the app once in Shopify admin. This provisions the Storefront access token the headless endpoints need. Until then, they return `APP_NOT_INSTALLED`.
 
@@ -43,7 +43,7 @@ You do **not** need the theme app embed for the headless endpoints.
 ## Endpoint 1 — Bundle data
 
 ```
-GET https://app.knit-bundle.co/headless/bundles?shop={shop}&product_id={product_id}
+GET https://app.fastbundle.co/headless/bundles?shop={shop}&product_id={product_id}
 ```
 
 Returns the shop's bundles as normalized JSON: resolved products, offers with their tiers, typed conditions and rewards, and each bundle's display settings. Use it to build your own bundle UI.
@@ -62,7 +62,7 @@ Returns the shop's bundles as normalized JSON: resolved products, offers with th
 ### Example
 
 ```
-GET https://app.knit-bundle.co/headless/bundles?shop=your-store.myshopify.com&product_id=7494254788801
+GET https://app.fastbundle.co/headless/bundles?shop=your-store.myshopify.com&product_id=7494254788801
 ```
 
 ```json
@@ -217,10 +217,10 @@ Bundle changes can take up to about 6 minutes to reach clients through caches.
 ## Endpoint 2 — Embed (iframe)
 
 ```
-GET https://app.knit-bundle.co/headless/embed?shop={shop}&product_id={product_id}
+GET https://app.fastbundle.co/headless/embed?shop={shop}&product_id={product_id}
 ```
 
-Returns a self-contained HTML page that loads the Knit widget runtime, fetches the bundles that apply to the product, and renders them. Put it in an `<iframe>`; you only handle **add-to-cart** (see [postMessage bridge](#postmessage-bridge)).
+Returns a self-contained HTML page that loads the Fast Bundle widget runtime, fetches the bundles that apply to the product, and renders them. Put it in an `<iframe>`; you only handle **add-to-cart** (see [postMessage bridge](#postmessage-bridge)).
 
 ### Query parameters
 
@@ -244,8 +244,8 @@ Returns a self-contained HTML page that loads the Knit widget runtime, fetches t
 
 ```html
 <iframe
-  id="knit-bundle"
-  src="https://app.knit-bundle.co/headless/embed?shop=your-store.myshopify.com&product_id=7494254788801"
+  id="fast-bundle"
+  src="https://app.fastbundle.co/headless/embed?shop=your-store.myshopify.com&product_id=7494254788801"
   style="width:100%;border:0;"
   scrolling="no"
 ></iframe>
@@ -281,7 +281,7 @@ Every message has `source`, `v` (always `1`), and `type`. Ignore any message who
 | --- | --- | --- |
 | `addToCartResult` | `{ requestId, ok, code?, message? }` | Your answer to an `addToCart`. Echo the same `requestId`. On failure send `ok: false` with an optional `code` and `message` |
 
-If you don't reply within **10 seconds**, the add fails and the widget shows an error. A reply sent to any origin other than the Knit app origin is never delivered, so always reply to `https://app.knit-bundle.co`.
+If you don't reply within **10 seconds**, the add fails and the widget shows an error. A reply sent to any origin other than the Fast Bundle app origin is never delivered, so always reply to `https://app.fastbundle.co`.
 
 ### `lineItems` shape
 
@@ -300,18 +300,18 @@ If you don't reply within **10 seconds**, the add fails and the widget shows an 
 
 ### Host handler
 
-This handler checks that every message comes from the Knit iframe, validates its fields, adds the lines with the Shopify Storefront API, and replies only to the Knit origin. Replace the three constants at the top with your own values.
+This handler checks that every message comes from the Fast Bundle iframe, validates its fields, adds the lines with the Shopify Storefront API, and replies only to the Fast Bundle origin. Replace the three constants at the top with your own values.
 
 ```html
 <script>
-  const KNIT_ORIGIN = "https://app.knit-bundle.co";
+  const FAST_BUNDLE_ORIGIN = "https://app.fastbundle.co";
   const STOREFRONT_API = "https://your-store.myshopify.com/api/2026-07/graphql.json";
   const STOREFRONT_TOKEN = "your-storefront-access-token"; // a public Storefront API token
-  const IFRAME = document.getElementById("knit-bundle");
+  const IFRAME = document.getElementById("fast-bundle");
 
   window.addEventListener("message", async (event) => {
-    // Only the Knit iframe may talk to this handler.
-    if (event.origin !== KNIT_ORIGIN || event.source !== IFRAME.contentWindow) return;
+    // Only the Fast Bundle iframe may talk to this handler.
+    if (event.origin !== FAST_BUNDLE_ORIGIN || event.source !== IFRAME.contentWindow) return;
     const msg = event.data;
     if (!msg || msg.source !== "nameless-bundle" || msg.v !== 1) return;
 
@@ -373,7 +373,7 @@ This handler checks that every message comes from the Knit iframe, validates its
   function reply(requestId, ok, code, message) {
     IFRAME.contentWindow.postMessage(
       { source: "nameless-bundle-host", v: 1, type: "addToCartResult", requestId, ok, code, message },
-      KNIT_ORIGIN,
+      FAST_BUNDLE_ORIGIN,
     );
   }
 </script>
@@ -385,7 +385,7 @@ This handler checks that every message comes from the Knit iframe, validates its
 
 ## The discount tag (`__FB_ATC_UID`)
 
-Bundle discounts are applied at checkout by the **Knit discount function**, a Shopify Function. It doesn't infer bundles from products alone. It only considers lines that carry this line-item property:
+Bundle discounts are applied at checkout by the **Fast Bundle discount function**, a Shopify Function. It doesn't infer bundles from products alone. It only considers lines that carry this line-item property:
 
 | | |
 | --- | --- |
@@ -447,14 +447,14 @@ await cartLinesAdd({
 ```
 
 <Note>
-  Knit's own widget mints tags with the same engine checkout uses. A hand-built UI approximates it. When you can, use the Embed and let it tag for you.
+  Fast Bundle's own widget mints tags with the same engine checkout uses. A hand-built UI approximates it. When you can, use the Embed and let it tag for you.
 </Note>
 
 ### How to verify
 
 1. Add a qualifying bundle and open the cart, or place a test order.
 2. Each bundle line should show `__FB_ATC_UID` with a 5-part `|`-delimited value.
-3. Confirm the Knit discount is **Active** in Shopify admin → **Discounts**, and the bundle is **Active** in Knit.
+3. Confirm the Fast Bundle discount is **Active** in Shopify admin → **Discounts**, and the bundle is **Active** in Fast Bundle.
 
 If the property is there but the discount isn't, the tagged tier probably no longer exists or the quantities no longer meet it (a stale cart after a merchant edit), or the discount was turned off.
 
@@ -634,7 +634,7 @@ The JSON endpoints return `{ ok: false, code, message }`:
 | --- | --- | --- |
 | 400 | `INVALID_PARAMS` | `shop` is missing or not a valid `*.myshopify.com` domain (or, on collection-products, `collection_id` or `after` is missing) |
 | 404 | `NOT_FOUND` | The headless endpoints are not enabled for this deployment |
-| 409 | `APP_NOT_INSTALLED` | The shop has no Storefront token — open Knit once in Shopify admin |
+| 409 | `APP_NOT_INSTALLED` | The shop has no Storefront token — open Fast Bundle once in Shopify admin |
 | 502 | `UPSTREAM_ERROR` | The Shopify Storefront API call failed |
 
 `/headless/embed` returns plain-text `400` and `404` bodies for the same missing-parameter and not-enabled cases.
@@ -643,7 +643,7 @@ The JSON endpoints return `{ ok: false, code, message }`:
 
 ## Why the app origin?
 
-Headless clients can't frame `{shop}.myshopify.com`: Shopify sends `Content-Security-Policy: frame-ancestors 'none'` on every storefront response, and merchants can't change it. So the embed page is served from the Knit app origin, which sets no such header.
+Headless clients can't frame `{shop}.myshopify.com`: Shopify sends `Content-Security-Policy: frame-ancestors 'none'` on every storefront response, and merchants can't change it. So the embed page is served from the Fast Bundle app origin, which sets no such header.
 
 Because the page lives on the app origin, the widget fetches its data from `/headless/bundles` (same origin, no CORS) rather than the storefront App Proxy.
 

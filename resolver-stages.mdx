@@ -29,7 +29,7 @@ window.nameless.use({
 | `runPostAdd` | Post-add side effects on an intercepted fetch or XHR add. The default opens no drawer | `void` | 1500ms |
 | `transformCartResponse` | Rewrite the cart response. Runs only for a single-item request body | synthesized response | 500ms |
 
-Stages run in this order. When Knit adds the bundle itself (the internal path), `runPostAdd` and `transformCartResponse` don't run; the drawer and `after` hooks run directly.
+Stages run in this order. When Fast Bundle adds the bundle itself (the internal path), `runPostAdd` and `transformCartResponse` don't run; the drawer and `after` hooks run directly.
 
 Every resolver receives `(ctx, next)`:
 
@@ -45,11 +45,11 @@ Every resolver receives `(ctx, next)`:
 | `form`, `selection`, `request`, `payload`, `response` | Filled in from the stage that produces them onward |
 | `debug`, `log` | Debug flag and logger, both driven by `window.nameless.__overrideDebug` |
 
-`next()` runs the rest of the chain and finally Knit's built-in behavior — call it and adjust, rather than reimplementing a stage. If your resolver throws, times out, or returns a shape the host rejects, the host records a warning and falls through to `next()`, so a broken resolver degrades to the default instead of breaking the cart.
+`next()` runs the rest of the chain and finally Fast Bundle's built-in behavior — call it and adjust, rather than reimplementing a stage. If your resolver throws, times out, or returns a shape the host rejects, the host records a warning and falls through to `next()`, so a broken resolver degrades to the default instead of breaking the cart.
 
 The timeout covers your resolver **including** its `next()` call. If a resolver times out after calling `next()`, the chain runs again from the next entry. The `addToCart.before` [plugin hooks](/plugin-hooks) run inside `buildPayload`'s default, so they share its 500ms budget when a `buildPayload` resolver is registered. Keep resolvers and `before` hooks fast.
 
-Bundle adds made by Knit itself carry the request header `X-Nameless-Internal: 1`, which is how the interceptors tell them apart from the theme's adds.
+Bundle adds made by Fast Bundle itself carry the request header `X-Nameless-Internal: 1`, which is how the interceptors tell them apart from the theme's adds.
 
 ## When the override runs
 
