@@ -139,7 +139,7 @@ Trimmed; see the [Response schema reference](#response-schema-reference).
 A collection's `products` holds the first batch; `nextCursor` is `null` when there are no more.
 
 ```
-GET /headless/collection-products?shop={shop}&collection_id={collection.id}&after={collection.nextCursor}
+GET https://app.fastbundle.co/headless/collection-products?shop={shop}&collection_id={collection.id}&after={collection.nextCursor}
 ```
 
 | Parameter | Required | Description |
