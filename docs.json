@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Fast Bundle",
+  "name": "Fast Bundle 2.0",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
@@ -70,7 +70,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Install Fast Bundle",
+      "label": "Install Fast Bundle 2.0",
       "href": "https://apps.shopify.com/fast-bundle-product-bundles"
     }
   },
