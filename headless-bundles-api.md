@@ -8,7 +8,7 @@ description: "Embed the Fast Bundle 2.0 widget or read bundle data on a headless
 | **Embed** (fastest) | An `<iframe>` and a `postMessage` handler that adds to your cart |
 | **Data API** (full control) | Your own UI, price display, and cart logic — including the discount tag |
 
-Both are served from `https://app.fastbundle.co` under `/headless/*` (see [Why the app origin?](#why-the-app-origin)), and every request needs `shop={your-store}.myshopify.com`. Before you start, create an **Active** bundle and open Fast Bundle 2.0 once in Shopify admin; until then, endpoints return `APP_NOT_INSTALLED`.
+Both are served from `https://app.fastbundle.co` under `/headless/*`, and every request needs `shop={your-store}.myshopify.com`. Before you start, create an **Active** bundle and open Fast Bundle 2.0 once in Shopify admin; until then, endpoints return `APP_NOT_INSTALLED`.
 
 ---
 
@@ -158,6 +158,8 @@ Cache-Control: public, max-age=60, stale-while-revalidate=300
 ```
 
 Changes can take about 6 minutes to reach clients. Errors are not cached.
+
+`/headless/bundles` and `/headless/collection-products` send `Access-Control-Allow-Origin: *` (no credentials), so you can call them from any page.
 
 ---
 
@@ -544,9 +546,5 @@ JSON endpoints return `{ ok: false, code, message }`:
 | 502 | `UPSTREAM_ERROR` | The Shopify Storefront API call failed ("The shop's catalog could not be read.") |
 
 ---
-
-## Why the app origin?
-
-Shopify storefronts send `frame-ancestors 'none'`, so they can't be framed; the app origin can. `/headless/bundles` and `/headless/collection-products` send `Access-Control-Allow-Origin: *` (no credentials) on every response, errors included.
 
 For [support](/help), include your `shop`, the endpoint URL, and the JSON error or `[FastBundle]` console logs.
