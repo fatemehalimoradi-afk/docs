@@ -101,17 +101,7 @@ It resolves the shopper's language, then the shop's default language, then the l
 | No eligibility logic | Whether a tier applies, what it saves, and what is missing are all in `view.tiers` |
 | Escape every view string | Product titles are merchant input |
 
-Escaping helper — apply it to anything from the view, never to `ctx.t` output (`ctx.t` escapes itself and its variables; escaping twice shows shoppers `&amp;quot;`):
-
-```js
-function esc(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-```
+Escape every string from the view with an `esc()` helper like the one in the [minimal example](#minimal-example). Never escape `ctx.t` output: it escapes itself and its variables, and escaping twice shows shoppers `&amp;quot;`.
 
 ## Minimal example
 
@@ -221,18 +211,18 @@ window.nameless.defineRenderer(
 
 The widget is redrawn on every change, so anything the runtime might write into the button would be lost. Draw the busy and error states yourself from the view — the runtime writes nothing on failure.
 
-`themeButtonAdds` follows the bundle's add-to-cart method. In a popup it is always `false`, because the theme's button opens the popup and the widget's button is the only way to add. Trust the flag; there is no popup case to special-case. See [Shopify integration](/shopify-integration#add-to-cart-method).
+`themeButtonAdds` is `true` only when the bundle's add-to-cart method is the theme button and the widget sits inline on the product page. It is `false` in a popup, in a full-width display on the bundle's own page, and on every bundle when the store is set to ignore the theme's add-to-cart button. Trust the flag; there's no case to special-case. See [Shopify integration](/shopify-integration#add-to-cart-method).
 
 ## When things go wrong
 
-The host logs structured codes prefixed with `[nameless]`:
+The host logs structured codes prefixed with `[FastBundle]`:
 
 | Code | Meaning | Effect |
 | --- | --- | --- |
 | `RENDERER_THREW` | Your callback threw | Theme elements the bundle hid come back; the container keeps its last paint |
 | `RENDERER_LOAD_ERROR` | The CSS fetch or the JS `<script>` failed | The widget does not render for that bundle |
 | `RENDERER_VIEW_VERSION_MISSING` | `defineRenderer` was called without `viewVersion`, or never called | The widget is not run; the theme's page is shown |
-| `RENDERER_VIEW_UNSUPPORTED` | `defineRenderer` was called with a `viewVersion` other than `2` | The widget is not run; the theme's page is shown |
+| `RENDERER_VIEW_UNSUPPORTED` | `defineRenderer` was called with a `viewVersion` the host doesn't build | The widget is not run; the theme's page is shown |
 | `RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` mount for this bundle on the page | The renderer is never called |
 
 If the CSS fails, the JS is not run, so treat both assets as required. Stay defensive anyway: guard against empty `selectors`, empty `products`, empty `selections`, `null` images, and `null` money. Write semantic, labelled markup so the widget still works if styling fails.

@@ -54,7 +54,7 @@ A selector is one place the shopper picks — one product set in the editor. Ite
 | `optionPicks` | Option name → picked value, for drawing option dropdowns |
 | `unitPicks` | `null`, or one entry per unit when the shopper picks each unit on its own |
 | `pickedLast` | The shopper changed this selector's variant last |
-| `pickNeeded` | An option is still unpicked, so add-to-cart waits. Name the row once `addToCart.pressed` is true |
+| `pickNeeded` | A pick is still missing here: an option is unpicked, or — after a press of add to cart — an offer-wide condition that counts this row isn't met. Name the row once `addToCart.pressed` is true |
 
 A collection selector also has:
 
@@ -202,7 +202,7 @@ The outcome is for words only. Never work a price out of it — prices come from
 
 A chosen tier has `ifChosen: null` — tapping it again only clears the choice. Draw it from `selector.selections` and `view.summary` as they are.
 
-Draw a tier as a control when `ifChosen` is not `null` or `chosen` is true. Otherwise draw it as information, without `data-nameless-tier-id`. Write `ctx.t("Add {{count}} more", …)` from a positive `toAddTotal`, or name each selector from `toAdd`.
+When to draw a tier as a control is under [Tier controls](/data-attributes#tier-controls). Write `ctx.t("Add {{count}} more", …)` from a positive `toAddTotal`, or name each selector from `toAdd`.
 
 ## Summary
 
@@ -229,15 +229,15 @@ When it is set, draw one plan `<select>` per picked item whose chosen variant ha
 - Draw no control for a variant with empty `plans`.
 - The selection's prices already reflect the chosen plan.
 
-**One shared plan control** is the alternative, for a design that asks for one subscription choice for the whole bundle. Use it only while `view.subscriptions.sharedPlanOffered` is true — the engine sets it when every selector draws one fixed product on this page and no selector is picked unit by unit.
+**One shared plan control** is the alternative, for a design that asks for one subscription choice for the whole bundle. Use it only while `view.subscriptions.sharedPlanOffered` is true — the engine sets it when every selector draws one fixed product on this page. It also covers rows picked unit by unit.
 
 | Field | Meaning |
 | --- | --- |
 | `sharedPlanOffered` | One choice for the whole bundle is possible |
 | `sharedGroups` | Selling-plan group names every picked item can be bought on now |
-| `selectedGroup` | The chosen group; `null` = one-time |
+| `selectedGroup` | The chosen group; `null` = one-time, or the items are on different groups |
 
-Offer only `sharedGroups`. When it is empty, say in words that the items share no subscription — don't draw an empty `<select>`. Never draw per-item plan controls beside the shared one. A group with several plans (monthly and fortnightly) resolves to the first plan the group declares, so the shared control can't express delivery frequency.
+Offer only `sharedGroups`. When it is empty, say in words that the items share no subscription — don't draw an empty `<select>`. Never draw per-item plan controls beside the shared one. A group control puts each item on the first plan of that group its variant is sold on.
 
 ## Add-to-cart state
 

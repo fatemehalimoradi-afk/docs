@@ -23,10 +23,6 @@ Controls inside a disabled `<fieldset>`, or carrying `disabled` or `aria-disable
 | `data-nameless-selling-plan-selector` | `<select>` | `selector.id` | On `change`, sets the item's selling plan; `""` is one-time |
 | `data-nameless-selling-plan-group-selector` | `<select>` | (no value) | On `change`, puts every item on one selling-plan group; `""` is one-time |
 
-<Note>
-  Prefer these attributes over `dispatch`. Every interaction already has a supported path, and that path stays correct through repaints, add-to-cart override, and plugin hooks. See [Runtime API](/runtime-api).
-</Note>
-
 ## Quantity and tier patterns
 
 The value of `data-nameless-qty-selector` is always the selector id. The runtime infers what to do from the element:

@@ -156,7 +156,7 @@ GET https://app.fastbundle.co/headless/bundles?shop=your-store.myshopify.com&pro
         "id": "55",
         "isActive": "true",
         "priority": "1",
-        "isPopup": "false",
+        "layout": "ANCHORED",
         "atcOverride": "false",
         "injectSelector": "",
         "relativePosition": "AFTER",
@@ -178,7 +178,7 @@ The example is trimmed: the bundle's `type` field and the optional top-level `sh
 
 ### Response notes
 
-- **Bundles are not filtered by status.** Skip a bundle whose `isActive` is false (a Draft gets no checkout discount), and one whose `pdpDisplay.isActive` is `"false"` (the merchant hid it on product pages).
+- **Bundles are not filtered by status.** Skip a bundle whose `isActive` is false (a Draft gets no checkout discount), one whose `pdpDisplay.isActive` is `"false"` (the merchant hid it on product pages), and — unless you draw a pop-up — one whose `pdpDisplay.layout` is `"POPUP"`.
 - **Show on → Selected products' pages is not applied**, and Bundle as Product products can still appear in other bundles' collections. Apply your own rules if you need them.
 - **`pdpDisplay` scalars are strings** (`"true"`, `"1"`). Read `jsUrl`/`cssUrl` first; fall back to `pdpDisplay.assets`, then the bundle-level `assets`.
 - **IDs:** product and variant IDs are numeric strings (GID stripped). A collection's `id` is a full GID — pass it as is to [collection-products](#more-of-a-collections-products).
@@ -251,7 +251,7 @@ Returns a self-contained HTML page that loads the Fast Bundle 2.0 widget runtime
 ></iframe>
 ```
 
-The embed page is served with `Cache-Control: no-store` and **without** `X-Frame-Options` or `frame-ancestors`, so any origin can frame it.
+The embed page is served with `Cache-Control: no-store` and **without** `X-Frame-Options` or `frame-ancestors`, so any origin can frame it. It is also sandboxed (`Content-Security-Policy: sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox`): it runs in an opaque origin, so it can't use cookies or web storage, submit forms, or navigate your page.
 
 ---
 
@@ -281,7 +281,7 @@ Every message has `source`, `v` (always `1`), and `type`. Ignore any message who
 | --- | --- | --- |
 | `addToCartResult` | `{ requestId, ok, code?, message? }` | Your answer to an `addToCart`. Echo the same `requestId`. On failure send `ok: false` with an optional `code` and `message` |
 
-If you don't reply within **10 seconds**, the add fails and the widget shows an error. A reply sent to any origin other than the Fast Bundle 2.0 app origin is never delivered, so always reply to `https://app.fastbundle.co`.
+If you don't reply within **10 seconds**, the add fails and the widget shows an error.
 
 ### `lineItems` shape
 
@@ -300,18 +300,19 @@ If you don't reply within **10 seconds**, the add fails and the widget shows an 
 
 ### Host handler
 
-This handler checks that every message comes from the Fast Bundle 2.0 iframe, validates its fields, adds the lines with the Shopify Storefront API, and replies only to the Fast Bundle 2.0 origin. Replace the three constants at the top with your own values.
+This handler checks that every message comes from the Fast Bundle 2.0 iframe, validates its fields, and adds the lines with the Shopify Storefront API. Replace the constants at the top with your own values.
+
+The embed is sandboxed, so its messages arrive with `event.origin === "null"`. Identify the iframe by `event.source === iframe.contentWindow` plus `source` and `v`, and reply with target origin `"*"` — a reply aimed at the app origin is dropped and the add-to-cart times out.
 
 ```html
 <script>
-  const FAST_BUNDLE_ORIGIN = "https://app.fastbundle.co";
   const STOREFRONT_API = "https://your-store.myshopify.com/api/2026-07/graphql.json";
   const STOREFRONT_TOKEN = "your-storefront-access-token"; // a public Storefront API token
   const IFRAME = document.getElementById("fast-bundle");
 
   window.addEventListener("message", async (event) => {
-    // Only the Fast Bundle 2.0 iframe may talk to this handler.
-    if (event.origin !== FAST_BUNDLE_ORIGIN || event.source !== IFRAME.contentWindow) return;
+    // Only the Fast Bundle 2.0 iframe may talk to this handler (its origin is "null").
+    if (event.source !== IFRAME.contentWindow) return;
     const msg = event.data;
     if (!msg || msg.source !== "nameless-bundle" || msg.v !== 1) return;
 
@@ -373,7 +374,7 @@ This handler checks that every message comes from the Fast Bundle 2.0 iframe, va
   function reply(requestId, ok, code, message) {
     IFRAME.contentWindow.postMessage(
       { source: "nameless-bundle-host", v: 1, type: "addToCartResult", requestId, ok, code, message },
-      FAST_BUNDLE_ORIGIN,
+      "*", // the sandboxed iframe has no origin to target
     );
   }
 </script>
@@ -494,7 +495,8 @@ interface PdpDisplay {
   id: string | null;
   isActive: string;              // "false" ⇒ hidden on product pages
   priority: string | null;       // lower = shown first
-  isPopup: string;
+  layout: string | null;         // "ANCHORED" (inline), "POPUP", or "FULL_WIDTH"
+  isPopup?: string;              // only when layout is absent, on displays not yet re-saved
   atcOverride: string;
   injectSelector: string;
   relativePosition: string | null; // "BEFORE" | "AFTER" the matched element
@@ -633,11 +635,10 @@ The JSON endpoints return `{ ok: false, code, message }`:
 | HTTP | `code` | Meaning |
 | --- | --- | --- |
 | 400 | `INVALID_PARAMS` | `shop` is missing or not a valid `*.myshopify.com` domain (or, on collection-products, `collection_id` or `after` is missing) |
-| 404 | `NOT_FOUND` | The headless endpoints are not enabled for this deployment |
 | 409 | `APP_NOT_INSTALLED` | The shop has no Storefront token — open Fast Bundle 2.0 once in Shopify admin |
-| 502 | `UPSTREAM_ERROR` | The Shopify Storefront API call failed |
+| 502 | `UPSTREAM_ERROR` | The Shopify Storefront API call failed. The message is always "The shop's catalog could not be read." |
 
-`/headless/embed` returns plain-text `400` and `404` bodies for the same missing-parameter and not-enabled cases.
+Errors are not cached. `/headless/embed` returns a plain-text `400` body for a missing or invalid `shop`.
 
 ---
 
@@ -645,12 +646,10 @@ The JSON endpoints return `{ ok: false, code, message }`:
 
 Headless clients can't frame `{shop}.myshopify.com`: Shopify sends `Content-Security-Policy: frame-ancestors 'none'` on every storefront response, and merchants can't change it. So the embed page is served from the Fast Bundle 2.0 app origin, which sets no such header.
 
-Because the page lives on the app origin, the widget fetches its data from `/headless/bundles` (same origin, no CORS) rather than the storefront App Proxy.
-
-You may see `https://{shop}.myshopify.com/apps/proxy/bundles` and `/apps/proxy/embed`. Those are HMAC-signed App Proxy endpoints for hosts that **can** frame the storefront origin, and they return the same `Bundle[]` schema. For headless apps and mobile WebViews, use `/headless/*`.
+`/headless/bundles` and `/headless/collection-products` send `Access-Control-Allow-Origin: *` (no credentials) on every response, errors included, so any page can read them.
 
 ---
 
 ## Support
 
-Include your `shop` domain, the endpoint URL, and the full JSON error (or the `[nameless]` console logs from the embed iframe). See [Help](/help).
+Include your `shop` domain, the endpoint URL, and the full JSON error (or the `[FastBundle]` console logs from the embed iframe). See [Help](/help).

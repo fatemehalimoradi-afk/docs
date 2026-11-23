@@ -68,8 +68,8 @@ Return nothing, or `{ warnings: string[] }`. Warnings come back on the add-to-ca
 | --- | --- |
 | Order | Sequential, in registration order — never parallel |
 | Timeout | 1500ms per hook. Exceeding it logs `HOOK_TIMEOUT` and moves on |
-| Thrown errors | Logged as `HOOK_THREW` and skipped — they never break the shopper's add-to-cart |
-| Bad return values | Anything that isn't a plain object or `undefined` logs `HOOK_INVALID_RESULT` and is ignored |
+| Thrown errors | Logged (`[FastBundle/plugins]`) as `HOOK_THREW` and skipped — they never break the shopper's add-to-cart |
+| Bad return values | Anything that isn't a plain object or `undefined` is ignored, and reported as `HOOK_INVALID_RESULT` in the result's `pluginWarnings` |
 | Blocking | Only an explicit `{ ok: false }` halts the pipeline |
 | Mid-run changes | Hooks registered or removed during a run don't affect that run |
 

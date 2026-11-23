@@ -7,22 +7,13 @@ This guide is for Tapcart App Studio. You do not need to write code or use the T
 
 Bundles on Tapcart are the **same bundles** as your Shopify store. Add to cart goes to **Tapcart's native cart**. The Fast Bundle 2.0 block attaches the discount info — no extra merchant step. The discount still applies in Shopify checkout. Keep the Fast Bundle 2.0 automatic discount **Active** in Shopify admin → **Discounts**.
 
-```
-Your Tapcart app
-  └─ Product page
-       └─ Fast Bundle 2.0 block
-            └─ Bundle widget
-                 Shopper selects options and taps Add to Cart
-            Tapcart adds the lines (with discount info attached)
-```
-
 ## What Fast Bundle 2.0 sets up
 
 Before you start, Fast Bundle 2.0 will have:
 
-1. Enabled bundle data for your store
-2. Published the **Fast Bundle 2.0** block to your Tapcart app (App Studio → **My Blocks**)
-3. Pre-configured the block so it points at your store — you normally do not set URLs
+1. Your store has opened Fast Bundle 2.0 in Shopify admin at least once
+2. The **Fast Bundle 2.0** block is published to your Tapcart app (App Studio → **My Blocks**)
+3. The block finds your store automatically — you don't set URLs
 
 If any of these are missing, contact your Fast Bundle 2.0 account manager.
 
@@ -81,9 +72,8 @@ Then complete a test order. Each bundle line in Shopify admin → **Orders** sho
 
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
-| Blank space | Endpoint not enabled, or block not pointing at the store | Contact Fast Bundle 2.0 support |
-| Console: refused to connect | Tapcart WebView blocking the widget origin | Contact Fast Bundle 2.0 support (Tapcart allowlist) |
-| Blank space where the widget should be | No bundle matches this product | In Fast Bundle 2.0 admin, include this product in a bundle and set it **Active** |
+| Blank space where the widget should be | No Active bundle for this product, or the store hasn't opened the app yet | Include this product in an **Active** bundle; open Fast Bundle 2.0 once in Shopify admin; if it's still blank, contact Fast Bundle 2.0 support |
+| Console: refused to connect | Tapcart WebView blocking the widget origin | Contact Fast Bundle 2.0 support |
 | Fast Bundle 2.0 not in My Blocks | Block not published to this app | Contact your Fast Bundle 2.0 account manager |
 | Items in cart, no discount | Fast Bundle 2.0 automatic discount inactive, or property stripped | Confirm **Discounts** is Active; see [Troubleshooting](/troubleshooting) |
 
@@ -92,7 +82,3 @@ Bundle changes in Fast Bundle 2.0 admin can take up to about **6 minutes** to sh
 <Note>
   Placement is product page only. The block does not replace Tapcart's native Add to Cart button. In the app, bundles sell one-time only (no subscription plans), and bundles shown as a popup or hidden on product pages don't appear. **Show on → Selected products' pages** isn't applied in the app. Your Shopify web storefront is unchanged.
 </Note>
-
-## CLI (optional)
-
-If your team has Tapcart Enterprise CLI access and wants to host the block in your own repo, ask Fast Bundle 2.0 for the block project. Most merchants do not need this — Fast Bundle 2.0 publishes the block for you.

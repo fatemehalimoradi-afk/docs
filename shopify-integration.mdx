@@ -15,7 +15,7 @@ You don't need the theme app extension for [headless endpoints](/headless-bundle
 
 ## The app embed
 
-Turn on the app embed in **Online Store → Themes → Customize → App embeds**. It is listed as **Nameless Bundles**. It has no settings: it runs Fast Bundle 2.0 on every page of your store, finds the bundles that match the product page, and places their widgets.
+Turn on the app embed in **Online Store → Themes → Customize → App embeds**. It is listed as **Bundles**. It has no settings: it runs Fast Bundle 2.0 on every page of your store, finds the bundles that match the product page, and places their widgets.
 
 Bundle data comes with the page itself, from your store's Shopify data, so there's no extra request on most product pages. After you save a bundle, Fast Bundle 2.0 syncs it to Shopify in the background; reload the page once the editor shows **Synced**. On some pages (very large collections, or a block that names a bundle) the widget fetches its data instead, and a browser session can keep that copy for up to 5 minutes.
 
@@ -36,15 +36,16 @@ Fast Bundle 2.0 places each widget automatically, in this order:
 
 1. Where you placed the theme's app block for that bundle (see below).
 2. The bundle's **Custom element** selector, when its **Widget position** is relative to one.
-3. The store's **Default widget position** from **Settings**.
-4. The theme's add-to-cart button, found automatically.
-5. The end of the product section, or of the page if there is none. The console warns when this happens — set a widget position.
+3. The bundle type's selector from **Settings → Default widget position → Advanced**.
+4. The store's **Default widget position** from **Settings**.
+5. The theme's add-to-cart button, found automatically.
+6. The end of the product section, or of the page if there is none. The console warns when this happens — set a widget position.
 
-**Above** or **Below** in the bundle's **Widget position** sets which side of the element the widget goes, in every step.
+Each selector carries its own side. A bundle-type or store selector uses the **Position** set with it in **Settings**; when that is **Each bundle's own position**, the bundle's **Above** or **Below** applies.
 
 If the theme redraws the product section, Fast Bundle 2.0 puts the widget back. Several widgets on the same spot stack in priority order, with a 16px gap your theme can change with the CSS variable `--nameless-bundle-gap`.
 
-**Hide elements** (per bundle under **Advanced**, or store-wide in **Settings**) hides theme elements by CSS selector while the widget shows — for example, the theme's own quantity picker.
+**Hide elements** (per bundle under **Advanced**, per bundle type, or store-wide in **Settings** — all of them apply together) hides theme elements by CSS selector while the widget shows — for example, the theme's own quantity picker.
 
 ### The app block
 
@@ -52,7 +53,7 @@ To put the widget in an exact spot, use the theme's app block:
 
 1. In the bundle editor, open **App block** and **Copy display handle**.
 2. Open your theme editor on a product template.
-3. Add the **Nameless** app block where the widget should go.
+3. Add the **Bundle** app block where the widget should go.
 4. Paste the handle into its **Bundle metaobject handle** setting.
 
 Leave the setting empty to show whichever bundles match the product.
@@ -76,6 +77,7 @@ With the theme button:
 - One bundle per page takes the theme button: the first in priority order. Other bundles that would take it aren't shown.
 - It works best for **a main product plus optional picks**. A bundle made only of a collection list isn't supported.
 - After the add, the theme's cart drawer opens.
+- With **Settings → Widget button action → Advanced → Don't use the theme's add-to-cart button** on, no bundle takes the theme's button and every widget shows its own. A Bundle as Product page still turns an add of its product into the bundle.
 
 Developers can wrap this pipeline — see [Resolver stages](/resolver-stages).
 

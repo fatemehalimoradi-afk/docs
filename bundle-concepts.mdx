@@ -68,7 +68,7 @@ How conditions count:
 
 Some bundles need "the shopper already has X in the cart" rather than "the shopper buys X in this bundle". A **trigger** is a condition that counts matching items **anywhere in the cart** and uses none of them — it only qualifies the shopper. Each item qualifies an offer once per cart.
 
-Bundle types and the AI create triggers for you (for example, an add-on discount that needs the main product in the cart). The Form tab doesn't edit them.
+In the Form tab, tick **Only unlocks the offer: these items stay full price** on an **At least** condition. Bundle types and the AI also create triggers for you — for example, an add-on discount that needs the main product in the cart.
 
 ## Rewards
 
@@ -90,7 +90,7 @@ For a fixed discount or a set price, **Applies per** says how the value spreads:
 
 ### Buy X, get Y
 
-A reward can discount only **some** of the units: skip the first X, then discount up to Y, cheapest first. "Buy 3, get 1 free" is a 100% reward that skips 3 and discounts 1 — of 4 units, the cheapest is free. Bundle types and the AI set this up; the Form tab shows it as read-only text.
+A reward can discount only **some** of the units: skip the first X, then discount up to Y, cheapest first. "Buy 3, get 1 free" is a 100% reward that skips 3 and discounts 1 — of 4 units, the cheapest is free. In the Form tab, tick **Discount only the cheapest items** and set **Number of items to discount**. Skipping the first X units is set by bundle types and the AI; the form shows it as text.
 
 ### Shipping rewards
 
@@ -110,7 +110,7 @@ A tier can have several rewards — for example, 10% off the main product and a 
 
 Fast Bundle 2.0 doesn't change product prices. When the shopper adds the bundle, each cart line is tagged, and Fast Bundle 2.0's Shopify discount function applies the rewards at checkout. The widget shows the same discount ahead of time, worked out by the same rules.
 
-Keep Fast Bundle 2.0's automatic discount, **FastBundle (DO NOT DELETE)**, **Active** in Shopify admin → **Discounts**. See [Shopify integration](/shopify-integration#checkout).
+See [Shopify integration](/shopify-integration#checkout).
 
 ## Widget
 
@@ -156,7 +156,3 @@ Buy the phone, get 20% off a case.
 | Tier #2 | **At least** 4 from Product #1 | 20% off Product #1 |
 
 A shopper who adds 5 from the widget gets Tier #2. Raising the quantity in the cart later doesn't move the bundle up a tier — checkout starts from the tier tagged when the bundle was added.
-
-## Bundle status
-
-Only **Active** bundles appear on your Shopify store and get the checkout discount. A **Draft** bundle can be previewed with `?nameless_preview=true`, without the discount.

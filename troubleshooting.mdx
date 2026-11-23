@@ -8,7 +8,7 @@ Use this page when the widget is missing, add-to-cart fails, or checkout doesn't
 ## Checklist
 
 1. Fast Bundle 2.0 is installed and has been **opened once** in Shopify admin.
-2. The **Nameless Bundles** app embed is on in your theme.
+2. The **Bundles** app embed is on in your theme.
 3. The bundle is **Active**, and **Show this bundle on product pages** is on.
 4. The bundle editor shows **Synced**, not **Syncing with Shopify** or **Sync failed**.
 5. You are testing a product that matches one of the bundle's product sets (the product, a collection it belongs to, or every product).
@@ -18,7 +18,7 @@ Use this page when the widget is missing, add-to-cart fails, or checkout doesn't
 
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
-| Blank on a Liquid product page | App embed off, or the product doesn't match an active bundle | Turn on the **Nameless Bundles** app embed. Confirm the bundle is Active and includes this product |
+| Blank on a Liquid product page | App embed off, or the product doesn't match an active bundle | Turn on the **Bundles** app embed. Confirm the bundle is Active and includes this product |
 | Shows on some products only | **Show on → Selected products' pages** | Check which product sets are selected |
 | A different bundle shows | Several bundles match; the one with the lower **Display priority** shows first. Only one pop-up and one theme-button bundle show per page | Adjust **Display priority** |
 | Widget in the wrong place | No position matched the theme | Set **Widget position → Custom element**, or use the [app block](/shopify-integration#the-app-block) |
@@ -27,12 +27,11 @@ Use this page when the widget is missing, add-to-cart fails, or checkout doesn't
 | Blank iframe (headless / Tapcart) | Wrong `shop` domain, or embed origin blocked | Use `{store}.myshopify.com`. If the console says refused to connect, the host must allow `https://app.fastbundle.co` |
 | Headless JSON `APP_NOT_INSTALLED` | Storefront token not provisioned | Open Fast Bundle 2.0 once in Shopify admin, then retry |
 | Headless JSON `INVALID_PARAMS` | Missing or invalid `shop` | Pass `shop=your-store.myshopify.com` |
-| Headless JSON `NOT_FOUND` | Headless not enabled on this deployment | Contact Fast Bundle 2.0 support |
-| Console `[nameless] RENDERER_THREW` | The renderer threw | Fix the JS code. The last successful paint stays. See [Renderer function](/renderer-function#when-things-go-wrong) |
-| Console `[nameless] RENDERER_LOAD_ERROR` | CSS fetch or JS `<script>` failed | Treat both as required. The widget doesn't render |
-| Console `[nameless] RENDERER_VIEW_VERSION_MISSING` | `defineRenderer` was called without `viewVersion` | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
-| Console `[nameless] RENDERER_VIEW_UNSUPPORTED` | `defineRenderer` was called with a `viewVersion` other than `2` | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
-| Console `[nameless] RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` on the page | Turn on the app embed |
+| Console `[FastBundle] RENDERER_THREW` | The renderer threw | Fix the JS code. The last successful paint stays. See [Renderer function](/renderer-function#when-things-go-wrong) |
+| Console `[FastBundle] RENDERER_LOAD_ERROR` | CSS fetch or JS `<script>` failed | Treat both as required. The widget doesn't render |
+| Console `[FastBundle] RENDERER_VIEW_VERSION_MISSING` | `defineRenderer` was called without `viewVersion` | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
+| Console `[FastBundle] RENDERER_VIEW_UNSUPPORTED` | `defineRenderer` was called with a `viewVersion` the host doesn't build | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
+| Console `[FastBundle] RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` on the page | Turn on the app embed |
 | Admin preview: "This renderer is out of date" | Same as `RENDERER_VIEW_VERSION_MISSING` | Ask the assistant to regenerate it |
 | Admin preview: "This renderer can't be shown" | Same as `RENDERER_VIEW_UNSUPPORTED` | Ask the assistant to regenerate it |
 
@@ -80,5 +79,5 @@ Include:
 - Shopify domain (`your-store.myshopify.com`)
 - Product handle or ID
 - Endpoint URL or page URL
-- The full JSON error (`{ ok: false, code, message }`), or the `[nameless]` console logs
+- The full JSON error (`{ ok: false, code, message }`), or the `[FastBundle]` console logs
 - A screenshot or recording (storefront, Tapcart preview, or device)
