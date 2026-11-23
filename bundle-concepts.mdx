@@ -3,98 +3,86 @@ title: "Bundle concepts"
 description: "Product sets, offers, tiers, conditions, rewards, and the widget"
 ---
 
-Every bundle is built from the same pieces, whether you made it from a bundle type or with the Bundle Engine:
+Every bundle is built from the same pieces. A bundle type's form builds them for you; the Bundle Engine's **Form** tab edits them directly.
 
 | Piece | What it is |
 | --- | --- |
 | **Product sets** | The products in play. In the editor: **Products used in logic** |
 | **Offers** | Independent deals inside the bundle. Each offer is a ladder of **tiers** |
 | **Conditions** | What the shopper must buy for a tier to apply |
-| **Rewards** | What the shopper gets when it applies — on products or on shipping |
+| **Rewards** | What the shopper gets — on products or on shipping |
 | **Widget** | How the bundle looks and behaves on the product page |
 
-A bundle type's form builds these pieces for you. The Bundle Engine's **Form** tab lets you edit them directly. This page explains how they fit together.
-
 ## Product sets
-
-A product set is one thing the shopper picks from. Add one with:
 
 | Button | The set is |
 | --- | --- |
 | **Add product** | One product; its variants are the choices |
 | **Add variant** | One specific variant |
 | **Add collection** | A collection; its products are the choices |
-| **Add every product** | Any product in the store. It counts the product the shopper is viewing |
+| **Add every product** | Any product in the store, including the one being viewed |
 
-Product, collection, and every-product sets also say what the items counted from them must share — **Matching items must be**. A product set offers **The same variant** or **Any mix**; collection and every-product sets offer all three:
+**Matching items must be** sets what counted items share. Product sets offer **The same variant** or **Any mix**; collection and every-product sets offer all three:
 
 | Option | Meaning | Example |
 | --- | --- | --- |
 | **The same variant** | Every unit is one variant | 3 × Shampoo 250 ml |
-| **The same product** | Every unit is one product, in any of its variants | 3 of one shirt from the collection, mixed sizes |
-| **Any mix** | Units can mix products and variants | Any 3 items from the Basics collection |
+| **The same product** | Every unit is one product, any variant | 3 of one shirt, mixed sizes |
+| **Any mix** | Units can mix products and variants | Any 3 items from Basics |
 
-On a collection set with **The same product**, the shopper buys one product from the collection. On the product page of a product in that collection, the widget shows that product itself.
 ## Offers and tiers
 
-An **offer** is one deal. Its **tiers** are the rungs of a ladder, smallest first: each later tier asks for more and gives more.
+An **offer** is one deal; its **tiers** form a ladder, smallest first (for example, buy 2 → 10% off, buy 4 → 20% off). In each offer the shopper gets **one** tier — the highest their picks meet, or the one they tap in the widget.
 
-- Offer #1, Tier #1: buy 2 → 10% off
-- Offer #1, Tier #2: buy 4 → 20% off
-
-In each offer, the shopper gets **one** tier — by default the highest one their picks meet. In the widget, a shopper can also tap a tier to choose it; the widget changes the picks to meet it.
-
-A bundle can hold **several offers**. They are independent and can all apply in one purchase, each on its own units. For example, one offer for "buy 2, save 10%" on the main product, and a second offer for "add a gift card holder for $5".
+A bundle can hold **several offers**. They are independent and can all apply, each on its own units.
 
 ## Conditions
 
 A condition is: **Customer buys** a number of items **counted from** one or more product sets.
 
-| **Customer buys** | Meaning | Example |
-| --- | --- | --- |
-| **At least** | This number or more | Buy 2 or more |
-| **At most** | This number or fewer | Up to 5 |
-| **Exactly** | This number only | Exactly 3 |
-| **Between** | An inclusive range | 2–4 |
+| **Customer buys** | Meaning |
+| --- | --- |
+| **At least** | This number or more |
+| **At most** | This number or fewer |
+| **Exactly** | This number only |
+| **Between** | An inclusive range |
 
-How conditions count:
-
-- **Items from all the selected sets count together.** "Between 2 and 5 from Shampoo and Conditioner" is met by 1 shampoo + 2 conditioners. To require each one, add one condition per product set.
-- **A maximum caps; it doesn't refuse.** With "at most 5", a shopper who buys 7 gets the discount on 5 and pays full price for the other 2. Adding an item never lowers the discount.
-- **AND and OR.** Conditions added with **+ AND new condition** must all hold. Conditions joined with **+ OR** are alternatives: any one of them is enough.
-- **All tiers.** A condition set with **Apply to every tier** (badge **All tiers**) belongs to the offer, so every tier of it must meet it too.
+- **Selected sets count together.** "Between 2 and 5 from Shampoo and Conditioner" is met by 1 shampoo + 2 conditioners. To require each, add one condition per set.
+- **A maximum caps; it doesn't refuse.** With "at most 5", a shopper who buys 7 gets the discount on 5.
+- **+ AND new condition** — all must hold. **+ OR** — any one is enough.
+- **Apply to every tier** (badge **All tiers**) — every tier of the offer must meet the condition.
 
 ### Triggers
 
-Some bundles need "the shopper already has X in the cart" rather than "the shopper buys X in this bundle". A **trigger** is a condition that counts matching items **anywhere in the cart** and uses none of them — it only qualifies the shopper. Each item qualifies an offer once per cart.
-
-In the Form tab, tick **Only unlocks the offer: these items stay full price** on an **At least** condition. Bundle types and the AI also create triggers for you — for example, an add-on discount that needs the main product in the cart.
+A **trigger** counts matching items **anywhere in the cart** and uses none of them — "the shopper already has X". Each item qualifies an offer once per cart. In the Form tab, tick **Only unlocks the offer: these items stay full price** on an **At least** condition.
 
 ## Rewards
 
-A reward is what the tier gives, on the product sets you choose under **Discount applies to**. The reward's set doesn't have to be the one the condition counts: "buy the phone, get 20% off a case" counts the phone and discounts the case.
+A reward applies to the product sets under **Discount applies to** — not necessarily the set the condition counts ("buy the phone, get 20% off a case").
 
 | **Reward type** | Value | Meaning |
 | --- | --- | --- |
 | **Percentage discount** | **Percentage** | A percent off |
-| **Fixed discount** | **Amount** | A money amount off, in your shop currency |
-| **Set price** | **Price** | What the items end up costing, not a reduction. `0` makes them free |
+| **Fixed discount** | **Amount** | An amount off, in your shop currency |
+| **Set price** | **Price** | What the items end up costing. `0` makes them free |
 
-For a fixed discount or a set price, **Applies per** says how the value spreads:
+For a fixed discount or set price, **Applies per** says how the value spreads:
 
-| **Applies per** | Meaning | Example |
-| --- | --- | --- |
-| **Total** | Once, across all the discounted items together | $10 off on two sets is $10 off their combined subtotal |
-| **Per selector** | Once for each product set | $10 off on two sets is $20 off |
-| **Per unit** | Once for each unit | $5 off with quantity 3 is $15 off |
+| **Applies per** | Example |
+| --- | --- |
+| **Total** | $10 off on two sets is $10 off their combined subtotal |
+| **Per selector** | $10 off on two sets is $20 off |
+| **Per unit** | $5 off with quantity 3 is $15 off |
+
+A tier can have several rewards; they all apply.
 
 ### Buy X, get Y
 
-A reward can discount only **some** of the units: skip the first X, then discount up to Y, cheapest first. "Buy 3, get 1 free" is a 100% reward that skips 3 and discounts 1 — of 4 units, the cheapest is free. In the Form tab, tick **Discount only the cheapest items** and set **Number of items to discount**. Skipping the first X units is set by bundle types and the AI; the form shows it as text.
+A reward can skip the first X units, then discount up to Y, cheapest first. "Buy 3, get 1 free" is 100% off, skip 3, discount 1. In the Form tab, tick **Discount only the cheapest items** and set **Number of items to discount**. The skip is set by bundle types and the AI.
 
 ### Shipping rewards
 
-**+ Add shipping reward** (one per tier) gives the shopper a deal on delivery when the tier applies:
+**+ Add shipping reward** (one per tier):
 
 | **Shipping reward** | Meaning |
 | --- | --- |
@@ -102,57 +90,8 @@ A reward can discount only **some** of the units: skip the first X, then discoun
 | **Fixed discount** | An amount off shipping, at most the shipping cost |
 | **Percentage discount** | A percent off shipping |
 
-### Several rewards on a tier
-
-A tier can have several rewards — for example, 10% off the main product and a free gift. They all apply.
-
-## Where the discount happens
-
-Fast Bundle 2.0 doesn't change product prices. When the shopper adds the bundle, each cart line is tagged, and Fast Bundle 2.0's Shopify discount function applies the rewards at checkout. The widget shows the same discount ahead of time, worked out by the same rules.
-
-See [Shopify integration](/shopify-integration#checkout).
-
 ## Widget
 
-The widget is how the bundle appears on the product page. A bundle type ships a ready widget you style in its **Style** panel. A Bundle Engine bundle has its own **JS code** and **CSS code**, which the AI writes and you can edit. See [Widget](/widget).
+A bundle type ships a ready widget you style in its **Style** panel. A Bundle Engine bundle has its own **JS code** and **CSS code**. See [Widget](/widget).
 
-## Examples
-
-### Volume discount on one product
-
-Buy 2 of this shampoo, save 19%.
-
-| Piece | Setting |
-| --- | --- |
-| Product set | Product #1: the shampoo, **The same variant** |
-| Tier #1 condition | **Customer buys** **At least** 2 from Product #1 |
-| Tier #1 reward | **Percentage discount** 19% on Product #1 |
-
-### Mix and match
-
-Any 3 from the Basics collection for $30.
-
-| Piece | Setting |
-| --- | --- |
-| Product set | Collection #1: Basics, **Any mix** |
-| Tier #1 condition | **Exactly** 3 from Collection #1 |
-| Tier #1 reward | **Set price** $30, **Applies per** **Total**, on Collection #1 |
-
-### Buy one thing, discount another
-
-Buy the phone, get 20% off a case.
-
-| Piece | Setting |
-| --- | --- |
-| Product sets | Product #1: the phone. Collection #1: cases |
-| Tier #1 conditions | **At least** 1 from Product #1 **AND** **At least** 1 from Collection #1 |
-| Tier #1 reward | **Percentage discount** 20% on Collection #1 |
-
-### A ladder
-
-| Tier | Condition | Reward |
-| --- | --- | --- |
-| Tier #1 | **At least** 2 from Product #1 | 10% off Product #1 |
-| Tier #2 | **At least** 4 from Product #1 | 20% off Product #1 |
-
-A shopper who adds 5 from the widget gets Tier #2. Raising the quantity in the cart later doesn't move the bundle up a tier — checkout starts from the tier tagged when the bundle was added.
+The discount itself is applied at checkout — see [Shopify integration](/shopify-integration#checkout). For full examples, see [What you can build](/what-you-can-build).

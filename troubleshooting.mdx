@@ -3,98 +3,77 @@ title: "Troubleshooting"
 description: "Blank widget, missing discount, and common Fast Bundle 2.0 errors"
 ---
 
-Use this page when the widget is missing, add-to-cart fails, or checkout doesn't show the bundle discount.
-
 ## Checklist
 
 1. Fast Bundle 2.0 is installed and has been **opened once** in Shopify admin.
-2. The **Bundles** app embed is on in your theme.
+2. The **Bundles** app embed is on.
 3. The bundle is **Active**, and **Show this bundle on product pages** is on.
-4. The bundle editor shows **Synced**, not **Syncing with Shopify** or **Sync failed**.
-5. You are testing a product that matches one of the bundle's product sets (the product, a collection it belongs to, or every product).
-6. In Shopify admin → **Discounts**, Fast Bundle 2.0's automatic discount, **FastBundle (DO NOT DELETE)**, is **Active**.
-7. No plan or billing banner is showing in the admin (see [Plan and billing](#plan-and-billing)).
+4. The editor shows **Synced**, not **Syncing with Shopify** or **Sync failed**.
+5. The product you test matches one of the bundle's product sets.
+6. **FastBundle (DO NOT DELETE)** is **Active** in Shopify admin → **Discounts**.
+7. No plan or billing banner shows in the admin.
 
 ## Plan and billing
 
-Your plan can hide bundles or stop you from activating them. Fast Bundle 2.0 shows a banner in the admin when this happens:
-
-| Banner | What it means | What to do |
+| Banner | Meaning | What to do |
 | --- | --- | --- |
-| **Approve your plan to show your bundles again** | Your plan has no active Shopify subscription, so bundles are hidden from shoppers | Click **Approve in Shopify** |
-| **Your plan approval is waiting in Shopify** | You started approving a plan but didn't finish | Click **Finish approval in Shopify**, or choose a plan instead |
-| **Keep your bundles live — upgrade within N days** | You've reached your bundle revenue allowance. Bundles keep running during the grace period | Upgrade to a higher tier before the grace period ends |
-| **Your bundles are paused** | The grace period ended. Bundle displays and discounts are stopped | Upgrade to a tier that covers your bundle revenue, or wait for your next revenue cycle |
-| **Upgrade to activate this bundle** | Your plan doesn't include bundles built with the Bundle Engine's form. You can build and preview it as a **Draft** | Click **Upgrade to Enterprise** to activate it |
+| **Approve your plan to show your bundles again** | No active subscription; bundles hidden | **Approve in Shopify** |
+| **Your plan approval is waiting in Shopify** | Approval not finished | **Finish approval in Shopify**, or choose a plan |
+| **Keep your bundles live — upgrade within N days** | Revenue allowance reached; grace period running | Upgrade before it ends |
+| **Your bundles are paused** | Grace period ended; displays and discounts stopped | Upgrade, or wait for the next revenue cycle |
+| **Upgrade to activate this bundle** | Plan excludes Bundle Engine form bundles (Draft still works) | **Upgrade to Enterprise** |
 
 ## Install didn't create the discount
 
-Fast Bundle 2.0 creates its automatic discount, **FastBundle (DO NOT DELETE)**, when you install. If a discount with that exact title already exists — left by an interrupted install, or created by someone else — the app can't create its own. Delete or rename the old one in Shopify admin → **Discounts**. Fast Bundle 2.0 retries once a day.
+A discount titled **FastBundle (DO NOT DELETE)** already exists. Delete or rename it in Shopify admin → **Discounts**; Fast Bundle 2.0 retries once a day.
 
 ## Widget does not appear
 
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
-| Blank on a Liquid product page | App embed off, or the product doesn't match an active bundle | Turn on the **Bundles** app embed. Confirm the bundle is Active and includes this product |
-| Shows on some products only | **Show on → Selected products' pages** | Check which product sets are selected |
-| A different bundle shows | Several bundles match; the one with the lower **Display priority** shows first. Only one pop-up and one theme-button bundle show per page | Adjust **Display priority** |
+| Blank on a Liquid product page | App embed off, or product not in an active bundle | Turn on the **Bundles** embed; check the bundle |
+| Shows on some products only | **Show on → Selected products' pages** | Check the selected product sets |
+| A different bundle shows | Several match; lower priority shows first | Adjust **Display priority** |
 | Widget in the wrong place | No position matched the theme | Set **Widget position → Custom element**, or use the [app block](/shopify-integration#the-app-block) |
-| Old products or tiers after an edit | Sync still running, or the browser kept a copy | Wait for **Synced**, then reload in a new private window |
+| Old content after an edit | Sync running, or browser cache | Wait for **Synced**; reload in a private window |
 | Draft bundle not visible | Drafts are hidden | Add `?nameless_preview=true` to the URL |
-| Blank iframe (headless / Tapcart) | Wrong `shop` domain, or embed origin blocked | Use `{store}.myshopify.com`. If the console says refused to connect, the host must allow `https://app.fastbundle.co` |
-| Headless JSON `APP_NOT_INSTALLED` | Storefront token not provisioned | Open Fast Bundle 2.0 once in Shopify admin, then retry |
-| Headless JSON `INVALID_PARAMS` | Missing or invalid `shop` | Pass `shop=your-store.myshopify.com` |
-| Console `[FastBundle] RENDERER_THREW` | The renderer threw | Fix the JS code. The last successful paint stays. See [Renderer function](/renderer-function#when-things-go-wrong) |
-| Console `[FastBundle] RENDERER_LOAD_ERROR` | CSS fetch or JS `<script>` failed | Treat both as required. The widget doesn't render |
-| Console `[FastBundle] RENDERER_VIEW_VERSION_MISSING` | `defineRenderer` was called without `viewVersion` | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
-| Console `[FastBundle] RENDERER_VIEW_UNSUPPORTED` | `defineRenderer` was called with a `viewVersion` the host doesn't build | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
-| Console `[FastBundle] RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` on the page | Turn on the app embed |
-| Admin preview: "This renderer is out of date" | Same as `RENDERER_VIEW_VERSION_MISSING` | Ask the assistant to regenerate it |
-| Admin preview: "This renderer can't be shown" | Same as `RENDERER_VIEW_UNSUPPORTED` | Ask the assistant to regenerate it |
+| Blank iframe (headless / Tapcart) | Wrong `shop` domain, or embed origin blocked | Use `{store}.myshopify.com`. On "refused to connect", allow `https://app.fastbundle.co` |
+| Headless `APP_NOT_INSTALLED` | Storefront token not provisioned | Open Fast Bundle 2.0 once in Shopify admin |
+| Headless `INVALID_PARAMS` | Missing or invalid `shop` | Pass `shop=your-store.myshopify.com` |
+| `[FastBundle] RENDERER_THREW` | The renderer threw | Fix the JS code. See [Renderer function](/renderer-function#when-things-go-wrong) |
+| `[FastBundle] RENDERER_LOAD_ERROR` | CSS or JS failed to load | Fix the failing file |
+| `[FastBundle] RENDERER_VIEW_VERSION_MISSING`, or preview "This renderer is out of date" | `defineRenderer` called without `viewVersion` | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
+| `[FastBundle] RENDERER_VIEW_UNSUPPORTED`, or preview "This renderer can't be shown" | Unsupported `viewVersion` | Pass `{ viewVersion: 2 }`, or ask the assistant to regenerate the widget |
+| `[FastBundle] RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` on the page | Turn on the app embed |
 
 ## Add to cart fails
 
-- **Liquid, widget button:** the widget shows why — a pick is missing, an item is sold out, or Shopify's own message. A plugin can also block the add (`PLUGIN_BLOCKED` in the console).
-- **Liquid, theme button:** confirm the add-to-cart method is **Using theme button** only if you want the theme's button to add the bundle. When the bundle's lines can't be built, the theme's own add is refused too, and the widget says why. See [Shopify integration](/shopify-integration#add-to-cart-method).
-- **Headless:** handle `addToCart` over `postMessage` and reply with `addToCartResult` within 10 seconds. See [Headless Bundles API](/headless-bundles-api#postmessage-bridge).
-- **Tapcart:** publish the app after adding the block, then test on a device, not only the static canvas.
+- **Liquid:** the widget shows why (missing pick, sold out, or Shopify's message); with the theme button, the theme's add is refused too. `PLUGIN_BLOCKED` in the console means a plugin blocked it. See [Add-to-cart method](/shopify-integration#add-to-cart-method).
+- **Headless:** reply to `addToCart` with `addToCartResult` within 10 seconds. See [postMessage bridge](/headless-bundles-api#postmessage-bridge).
+- **Tapcart:** publish the app after adding the block, and test on a device.
 
 ## Save is refused
 
-"This shop's active bundles need … bytes of the … bytes a discount function can read" means your **Active** bundles together are too large for Shopify's discount function. Deactivate a bundle, make one smaller, or name fewer collections. Drafts don't count.
+"This shop's active bundles need … bytes…": your **Active** bundles together are too large. Deactivate one, make one smaller, or name fewer collections. Drafts don't count.
 
 ## Discount missing at checkout
 
-Items land in the cart at full price when the bundle's tag never reaches Shopify, or no tier holds.
-
-1. Confirm Fast Bundle 2.0's automatic discount is **Active** in Shopify admin → **Discounts**.
-2. Confirm the bundle is **Active** (a preview adds at full price).
-3. Add the bundle from the widget, then open the test order in **Orders**. Each bundle line should show `__FB_ATC_UID` and the discount.
-4. Check **Settings → Discount combinations** if another discount is also in the cart.
+1. **FastBundle (DO NOT DELETE)** is **Active** in **Discounts**, and the bundle is **Active** (previews add at full price).
+2. A test order from the widget shows `__FB_ATC_UID` and the discount on each bundle line in **Orders**.
+3. With another discount in the cart, check **Settings → Discount combinations**.
 
 | Surface | What must happen |
 | --- | --- |
-| Liquid theme | The widget adds the property. Don't strip line-item properties in cart apps |
-| Headless embed | Your `postMessage` handler passes `attributes` through as Shopify line-item properties. See [Headless Bundles API](/headless-bundles-api#embed-mode) |
-| Tapcart | The Fast Bundle 2.0 block adds the property. No extra step |
-| Custom cart / Hydrogen | Your cart API keeps custom line-item properties all the way to checkout |
-
-<Warning>
-  If a cart layer, middleware, or checkout app drops unknown line-item properties, the bundle discount won't apply. Keep `__FB_ATC_UID`.
-</Warning>
+| Liquid theme | Cart apps keep line-item properties |
+| Headless embed | Your handler passes `attributes` through. See [Embed mode](/headless-bundles-api#embed-mode) |
+| Custom cart / Hydrogen | Your cart API keeps line-item properties through checkout |
 
 Other causes:
 
-- **The cart changed after the add.** If the shopper lowers a quantity below the tier's condition, the tier no longer holds. Raising it in the cart doesn't move the bundle up a tier: checkout starts from the tier tagged at add-to-cart and only tries lower ones. Units above a condition's maximum pay full price by design.
-- **The bundle was edited after the add.** Checkout uses the bundle's current settings. If the tier the cart was tagged with was deleted, or its condition changed, the discount follows the new settings.
-- **The discount only covers some units.** A "buy X, get Y" reward discounts only Y units, cheapest first.
+- **The cart changed after the add.** Lowering a quantity can lose the tier; raising it doesn't move up a tier. Units above a maximum pay full price.
+- **The bundle was edited after the add.** Checkout uses the current settings.
+- **Buy X, get Y** discounts only Y units, cheapest first.
 
 ## What to send support
 
-Include:
-
-- Shopify domain (`your-store.myshopify.com`)
-- Product handle or ID
-- Endpoint URL or page URL
-- The full JSON error (`{ ok: false, code, message }`), or the `[FastBundle]` console logs
-- A screenshot or recording (storefront, Tapcart preview, or device)
+Your `myshopify.com` domain, product handle or ID, page or endpoint URL, the JSON error or `[FastBundle]` console logs, and a screenshot or recording.

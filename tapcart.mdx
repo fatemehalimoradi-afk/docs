@@ -3,82 +3,51 @@ title: "Tapcart"
 description: "Add the Fast Bundle 2.0 widget to a Tapcart product page"
 ---
 
-This guide is for Tapcart App Studio. You do not need to write code or use the Tapcart CLI. Fast Bundle 2.0 prepares and publishes the block; you add it to the product page and publish.
-
-Bundles on Tapcart are the **same bundles** as your Shopify store. Add to cart goes to **Tapcart's native cart**. The Fast Bundle 2.0 block attaches the discount info — no extra merchant step. The discount still applies in Shopify checkout. Keep the Fast Bundle 2.0 automatic discount **Active** in Shopify admin → **Discounts**.
-
-## What Fast Bundle 2.0 sets up
-
-Before you start, Fast Bundle 2.0 will have:
-
-1. Your store has opened Fast Bundle 2.0 in Shopify admin at least once
-2. The **Fast Bundle 2.0** block is published to your Tapcart app (App Studio → **My Blocks**)
-3. The block finds your store automatically — you don't set URLs
-
-If any of these are missing, contact your Fast Bundle 2.0 account manager.
+Fast Bundle 2.0 publishes a block to Tapcart App Studio; you add it to the product page, no code needed. It shows your store's bundles, adds to **Tapcart's native cart**, and the discount applies in Shopify checkout.
 
 ## Prerequisites
 
-- Fast Bundle 2.0 installed (see [Getting started](/getting-started))
-- At least one **Active** bundle in Fast Bundle 2.0 admin
-- Tapcart **Enterprise** with App Studio access (required for custom blocks)
-- Access to [Tapcart App Studio](https://studio.tapcart.com)
+- Fast Bundle 2.0 installed and opened once in Shopify admin (see [Getting started](/getting-started))
+- At least one **Active** bundle
+- Tapcart **Enterprise** with [App Studio](https://studio.tapcart.com) access
+- The **Fast Bundle 2.0** block published to your app (App Studio → **My Blocks**). If it's missing, contact your Fast Bundle 2.0 account manager.
 
 ## Add the block
 
 <Steps>
-  <Step title="Confirm the block">
-    Open App Studio, select your app, go to **Screens → My Blocks**, and confirm **Fast Bundle 2.0** is listed. If it is not, Fast Bundle 2.0 has not published it yet.
-  </Step>
   <Step title="Place it on the product page">
-    Open the **Product Detail Page** template. Click **Add Block**, choose **Fast Bundle 2.0**, and drag it where the widget should appear — typically below product details or above the native Add to Cart button.
+    In App Studio, open the **Product Detail Page** template, click **Add Block**, choose **Fast Bundle 2.0**, and drag it into place — typically above the native Add to Cart button.
   </Step>
   <Step title="Optional settings">
-    In most cases leave the right-hand panel as Fast Bundle 2.0 pre-filled it. You do not set a product ID; Tapcart supplies the current product.
+    Usually leave these as pre-filled.
 
     | Setting | Description |
     | --- | --- |
-    | App origin override | **Leave blank** (blank = production). Only set this if Fast Bundle 2.0 support asks you to. |
-    | Bundle handle, Bundle type | **Leave blank.** They don't currently limit which bundles show; every bundle that matches the product renders. |
-    | Initial height in px | Fallback height until the widget reports its size — what you see on the **static App Studio canvas**. On device the widget sizes to content. Default `600`. On a product with no bundle the block keeps this height, so set it lower if many products have none. |
-    | Debug mode | Type `true` or `1` for console logs and an on-screen diagnostic panel. **Shoppers see the panel too — leave it blank in production.** |
+    | App origin override | **Leave blank** (production) unless Fast Bundle 2.0 support asks. A wrong value leaves the widget blank |
+    | Bundle handle, Bundle type | **Leave blank.** They don't limit which bundles show |
+    | Initial height in px | Height on the static App Studio canvas, and for products with no bundle. Default `600`. On device the widget sizes to content |
+    | Debug mode | `true` or `1` shows console logs and a diagnostic panel. **Shoppers see it too — leave blank in production** |
   </Step>
   <Step title="Save and publish">
     Save the screen, then **Publish** the app (or push a preview build).
   </Step>
 </Steps>
 
-<Warning>
-  If **App origin override** is set to the wrong value, the widget stays blank. Clear the field to use production.
-</Warning>
-
 ## Verify
 
-App Studio has two previews, and they are not the same:
-
-- **The canvas** (drag-and-drop layout) is static. The widget uses a **fixed placeholder height**. You may see a caption like _"Bundle preview — sizes to content on device."_ That is expected.
-- **"Preview your app"** and the **installed app** run the widget for real. It auto-sizes, including when a product has more than one bundle.
-
-Always verify in **Preview your app** or on a device.
-
-1. Open a product that has an **Active** bundle.
-2. The widget should appear, sized to its content.
-3. Select options and tap the bundle **Add to Cart** button.
-4. Tapcart cart should show every bundle line.
-
-Then complete a test order. Each bundle line in Shopify admin → **Orders** should show `__FB_ATC_UID` and the discount. If items are in the cart with no discount, see [Troubleshooting](/troubleshooting).
+The App Studio canvas is static. Test in **Preview your app** or on a device: open a product with an **Active** bundle, tap the bundle **Add to Cart**, and check the Tapcart cart shows every bundle line. A test order should show `__FB_ATC_UID` and the discount on each line in **Orders**.
 
 ## Troubleshooting
 
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
-| Blank space where the widget should be | No Active bundle for this product, or the store hasn't opened the app yet | Include this product in an **Active** bundle; open Fast Bundle 2.0 once in Shopify admin; if it's still blank, contact Fast Bundle 2.0 support |
+| Blank widget | No Active bundle for this product, or app never opened | Add the product to an **Active** bundle; open Fast Bundle 2.0 once in Shopify admin |
 | Console: refused to connect | Tapcart WebView blocking the widget origin | Contact Fast Bundle 2.0 support |
 | Fast Bundle 2.0 not in My Blocks | Block not published to this app | Contact your Fast Bundle 2.0 account manager |
-| Items in cart, no discount | Fast Bundle 2.0 automatic discount inactive, or property stripped | Confirm **Discounts** is Active; see [Troubleshooting](/troubleshooting) |
+| Items in cart, no discount | Automatic discount inactive, or property stripped | See [Troubleshooting](/troubleshooting#discount-missing-at-checkout) |
 
-Bundle changes in Fast Bundle 2.0 admin can take up to about **6 minutes** to show in the app.
+Bundle changes can take up to about **6 minutes** to show in the app.
 
 <Note>
-  Placement is product page only. The block does not replace Tapcart's native Add to Cart button. In the app, bundles sell one-time only (no subscription plans), and bundles shown as a popup or hidden on product pages don't appear. **Show on → Selected products' pages** isn't applied in the app. The widget always shows your store's default language and market prices. Your Shopify web storefront is unchanged.
+  Product page only; the block doesn't replace Tapcart's Add to Cart button. In the app, bundles are one-time purchase only, pop-up and hidden bundles don't appear, **Show on → Selected products' pages** isn't applied, and the widget uses your store's default language and market prices.
 </Note>

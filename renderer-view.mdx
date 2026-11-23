@@ -1,28 +1,11 @@
 ---
 title: "Renderer view"
-description: "The view a renderer draws from: selectors, tiers, prices, and add-to-cart state"
+description: "Selectors, tiers, prices, and add-to-cart state"
 ---
 
-`ctx.view` is everything the widget draws. The engine has already applied every rule and worked out every price, so what you need is in the view or one lookup away. There are no conditions, reward rules, or engine state in it.
-
-## How to read it
-
-| You want | Read |
-| --- | --- |
-| What the shopper can pick | `view.selectors[]` → `products[]` → `variants[]` |
-| What is picked now | `selector.selections[]` |
-| One item's price | `selection.eachNow` (and `eachWas` when discounted) |
-| A line's price | `selection.now` (and `was`) |
-| A selector's total | `selector.summary` |
-| The footer total | `view.summary.now`, `was`, `saved` |
-| An unpicked product's price | Its `defaultVariantId` variant's `price` |
-| The offer's tiers, which one applies, what is missing | `view.tiers[]` |
-| Add-to-cart button state | `view.addToCart` |
-| Subscription controls | `view.subscriptions` (null = draw none) |
+`ctx.view` is everything the widget draws, with every rule and price already worked out.
 
 ## Money
-
-Every price is a `Money`:
 
 ```ts
 interface Money {
@@ -32,80 +15,62 @@ interface Money {
 }
 ```
 
-- Print `.text`. Never add, multiply, divide, or format an amount yourself.
-- `was` and `saved` are `null` when nothing is discounted. Draw one price then, never a struck-through duplicate.
-- Every amount in one view is in the same currency.
-- Never present the total as the checkout total. Discount codes and other apps' discounts are invisible to the widget.
+- Print `.text`. Never do arithmetic on or format an amount.
+- `was` and `saved` are `null` when nothing is discounted; draw one price then.
+- All amounts in a view share one currency.
+- The total is not the checkout total: discount codes and other apps' discounts aren't in it.
 
 ## Selectors
 
-A selector is one place the shopper picks — one product set in the editor. Iterate `view.selectors` (merchant order) and branch on `itemType` and `type` before reading products.
+One selector per editor product set, in merchant order.
 
 | Field | Meaning |
 | --- | --- |
 | `id` | Goes into `data-nameless-*-selector` attributes |
-| `itemType` | `"product"` — its members are one product's variants. `"collection"` — its members are a collection's products |
-| `type` | `"single"` — every unit is the same member. `"multi"` — units can mix members |
-| `grouping` | What every counted unit shares: `"variant"`, `"product"` (any of its variants), or `"general"` (any mix). Use it to word the row ("pick a size" vs "mix sizes") |
-| `products` | Products loaded so far. Products with no variant left are not listed. Empty when nothing is left to sell |
-| `selections` | What is picked, one entry per picked variant |
+| `itemType` | `"product"`: one product's variants. `"collection"`: a collection's products |
+| `type` | `"single"`: every unit is the same member. `"multi"`: units can mix members |
+| `grouping` | What counted units share: `"variant"`, `"product"` (any of its variants), or `"general"` (any mix). Use it to word the row |
+| `products` | Products loaded so far that have a variant left; empty when nothing is left to sell |
+| `selections` | One entry per picked variant |
 | `summary` | These picks' totals and unit count |
-| `startQuantity` | Units a pick here starts with. A row still waiting for its pick stands for this many |
-| `optionPicks` | Option name → picked value, for drawing option dropdowns |
-| `unitPicks` | `null`, or one entry per unit when the shopper picks each unit on its own |
+| `startQuantity` | Units a pick starts with; a row awaiting its pick stands for this many |
+| `optionPicks` | Option name → picked value |
+| `unitPicks` | `null`, or one entry per unit when each unit is picked on its own |
 | `pickedLast` | The shopper changed this selector's variant last |
-| `pickNeeded` | A pick is still missing here: an option is unpicked, or — after a press of add to cart — an offer-wide condition that counts this row isn't met. Name the row once `addToCart.pressed` is true |
+| `pickNeeded` | A pick is missing (an unpicked option, or after a press an unmet offer-wide condition counting this row). Name the row once `addToCart.pressed` |
 
-A collection selector also has:
+Collection selectors also have:
 
 | Field | Meaning |
 | --- | --- |
 | `collection` | `{ handle, title }` |
-| `asPageProduct` | `true`: the page's product belongs to the collection and stands for it here. `products` holds that product alone, and it is drawn and picked like a product selector |
+| `asPageProduct` | `true`: the page's product stands for the collection. `products` holds only it; draw and pick it like a product selector |
 | `moreProducts` | `"ready"`, `"loading"`, `"failed"`, or `"none"` — see [Large collections](#large-collections) |
 
 ### What to draw
 
-| `itemType` + `type` | Draw | Products | Selections |
-| --- | --- | --- | --- |
-| `"product"`, either type | One product row | `products[0]` | Zero or one entry; one per unit when `unitPicks` is set |
-| `"collection"`, `asPageProduct: true` | One product row, picked like a product selector | `products[0]` | As a product selector |
-| `"collection"` + `"single"` | One row per product; picking one replaces the previous pick | `products` | At most one entry; match by `productId` |
-| `"collection"` + `"multi"` | One row per product | `products` | One entry per picked variant line; match by `productId` (and `variantId` when you use [variant lines](/data-attributes#variant-lines)) |
-
-A product selector with `type: "multi"` is still one product row; the shopper mixes variants, one pick per unit when `unitPicks` is set.
-
-Reading recipes:
-
-- A selector's heading is `selector.collection.title` for a collection selector, else `selector.products[0].title`.
-- A product with no entry in `selections` is unpicked (quantity `0`). Draw it with its `defaultVariantId` variant — that variant's price, picture, and stock — and mark it selected in its `<select>`.
-- A product's picture is its picked variant's `image`, else its `defaultVariantId` variant's.
-- Display `selection.quantity`. Never hardcode a starting quantity; the engine sets initial picks before the first render.
-- `view.pageProductId` is the product whose page shows the bundle (`null` off a product page). Compare it with `product.id` to set the page's own product apart.
-- A row is optional when no tier's `requirements` name it with a `min` above 0. Draw it as an add-on if the design calls for it.
-- Link to a product or collection with `ctx.productUrl(handle)` / `ctx.collectionUrl(handle)`. Both return `null` where the surface has no pages.
+- **Product selector**, or collection with `asPageProduct: true`: one product row from `products[0]`; zero or one selection, or one per unit when `unitPicks` is set.
+- **Collection, `"single"`**: one row per product; at most one selection, and a new pick replaces it.
+- **Collection, `"multi"`**: one row per product; one selection per picked variant line.
+- Match collection rows to selections by `productId` (and `variantId` with [variant lines](/data-attributes#variant-lines)).
+- Heading: `selector.collection.title` for a collection selector, else `selector.products[0].title`.
+- A product with no entry in `selections` is unpicked: draw its `defaultVariantId` variant (price, picture, stock) and mark it selected in its `<select>`.
+- Picture: the picked variant's `image`, else the default variant's.
+- Display `selection.quantity`; never hardcode a starting quantity.
+- `view.pageProductId` is the product whose page shows the bundle (`null` off a product page).
+- A row is optional when no tier's `requirements` name it with a `min` above 0.
 
 ### Options and per-unit picks
 
-Each product lists its `options` (`{ name, values }`, merchant order) and each variant its option values. You can draw variants two ways — pick one shape per selector:
+Per selector, draw either one variant dropdown or one dropdown per option (one-product rows only). See [Option dropdowns](/data-attributes#option-dropdowns).
 
-- **One variant dropdown** — `<option value>` is the variant id. See [Data attributes](/data-attributes#core-attributes).
-- **One dropdown per option** (Color, Size…), for one-product rows only — `<option value>` is the option value; read the current answer from `selector.optionPicks`. On each change the engine merges the pick over `optionPicks` and sets the selection to the one variant that carries every picked value, or to none. A value with no purchasable variant stays selectable.
-
-When `selector.unitPicks` is not `null`, the shopper picks each unit on its own. Draw one line of option dropdowns per unit, numbered "#1", "#2"… Read that unit's `optionPicks`, and its pick from the selection whose `unitIndex` is the unit's index. Put `data-nameless-unit="{index}"` on each of its `<select>`s.
+With `unitPicks` set, draw one numbered line of option dropdowns per unit ("#1", "#2"…), reading that unit's `optionPicks` and the selection with its `unitIndex`. Put `data-nameless-unit="{index}"` on each of its `<select>`s.
 
 ### Large collections
 
-A collection selector loads its products in batches of 50. `moreProducts` says what's next:
+Collection selectors load products in batches of 50. `moreProducts` is `ready` (another batch can load), `loading` (draw the button disabled), `failed` (the button retries), or `none` (all loaded; no button).
 
-| Value | Meaning |
-| --- | --- |
-| `ready` | Another batch can be loaded |
-| `loading` | It is arriving — draw the button disabled |
-| `failed` | It didn't arrive — the button retries |
-| `none` | Every product is here — draw no button |
-
-While it is not `none`, draw one `<button data-nameless-load-more="{selector.id}">` after the rows. Without it, the runtime still loads more when the last row scrolls into view — but never for rows drawn as `<option>`s. New rows arrive as a new render; keep each row's `id` stable so rows already drawn stay put.
+Unless it is `none`, draw one `<button data-nameless-load-more="{selector.id}">` after the rows (without it, more load on scroll, but not for rows drawn as `<option>`s). Keep row `id`s stable.
 
 ## Selections
 
@@ -127,32 +92,29 @@ interface ViewSelection {
 }
 ```
 
-`usedUnits` is below `quantity` when a tier's `max` capped the line — those units pay full price. `discountedUnits` is below `usedUnits` when a reward's slice lowered only some units ("buy 3, get 1 free"). When `discountedUnits` is below `quantity`, say so — for example `ctx.t("{{count}} of {{quantity}} discounted", …)` — rather than letting `eachNow` stand for every unit.
+`usedUnits` below `quantity`: a tier's `max` capped the line; the rest pay full price. When `discountedUnits` is below `quantity`, say so (e.g. `ctx.t("{{count}} of {{quantity}} discounted", …)`) rather than letting `eachNow` stand for every unit.
 
 ## Tiers
 
-`view.tiers` is every promise the bundle makes, in the merchant's order. Tiers with the same `offerId` belong together — one ladder, smallest first.
+`view.tiers` lists every tier in merchant order. Tiers sharing an `offerId` form one ladder, smallest first.
 
 | Field | Meaning |
 | --- | --- |
 | `id` | Goes into `data-nameless-tier-id` |
 | `offerId` | Groups the tiers of one offer |
-| `state` | `"applied"` — checkout charges it. `"met"` — it holds on picked units but isn't charged (another tier or offer took them). `"notMet"` — it doesn't hold, or nothing it counts is picked |
+| `state` | `"applied"`: checkout charges it. `"met"`: it holds but isn't charged (another tier or offer took the units). `"notMet"`: it doesn't hold, or nothing it counts is picked |
 | `chosen` | The shopper tapped it |
-| `toAddTotal` | Fewest units a tap adds; `0` when a tap adds nothing; `null` when adding can't meet it |
+| `toAddTotal` | Fewest units a tap adds; `0` if none; `null` when adding can't meet it |
 | `toAdd` | Those units by selector: `{ selectorId, count }[]` |
-| `inStock` | `false` when the picks a tap makes exceed stock. Draw the control disabled |
+| `inStock` | `false` when a tap's picks exceed stock |
 | `ifChosen` | The bundle after a tap: `{ summary, selections }`. `null` when a tap can't make it apply, and on a chosen tier |
-| `requirements` | What it asks for — see below |
-| `rewardGroups` | What it gives — see below |
+| `requirements`, `rewardGroups` | What it asks for and gives — see below |
 
-Several tiers can be `applied` at once, one per offer. Highlight a tier with `state === "applied"`.
-
-When several rungs of one ladder are met and none is chosen, the offer prices its highest met rung, as checkout does. Give every rung its own control so the shopper can pick a lower one.
+Highlight `applied` tiers (at most one per offer). With several rungs met and none chosen, the highest met rung is priced; give every rung its own control.
 
 ### Requirements — naming a tier
 
-`requirements` is a list of alternative **requirement sets**. Meeting every range of any one set meets the tier — join sets with "or". Each range is one pool:
+`requirements` is a list of alternative sets. Meeting every range in any one set meets the tier. Each range is one pool:
 
 ```ts
 interface ViewCountRange {
@@ -162,47 +124,25 @@ interface ViewCountRange {
 }
 ```
 
-Requirements are worked out with nothing picked, so they don't move while the shopper picks. An empty list means no picks can meet the tier.
+They don't change while the shopper picks. An empty list means no picks can meet the tier.
 
-Write the tier name from them with the numbers as variables, so the name follows the merchant's next edit and the translation key stays the same. Never type a count into a literal:
-
-| Range | Copy |
-| --- | --- |
-| `max: null` | `ctx.t("{{min}}+ {{what}}", vars)` |
-| `min === max` | `ctx.t("{{min}} {{what}}", vars)` |
-| `min: 0` | `ctx.t("Up to {{max}} {{what}}", vars)` |
-| otherwise | `ctx.t("{{min}} to {{max}} {{what}}", vars)` |
-
-`what` is the headings of `selectorIds` joined with `ctx.t("and")`. Join one set's ranges with " + ", and several sets with `ctx.t("or")`.
+Write the tier name with the numbers as `ctx.t` variables, never as literals: `{{min}}+` when `max` is `null`, `{{min}}` when `min === max`, `Up to {{max}}` when `min` is 0, else `{{min}} to {{max}}`, followed by `what` — the headings of `selectorIds` joined with `ctx.t("and")`. Join a set's ranges with " + ", and sets with `ctx.t("or")`. See `countText` in [tier cards](#tier-cards).
 
 ### Rewards — what a tier gives
 
-The shopper gets every reward of **exactly one** group in `rewardGroups`. Today every tier has one group. When there are several, join them with `ctx.t("or")` — never as a list the shopper gets in full — and the group with `state: "applied"` is the one checkout charges.
+The shopper gets every reward of **exactly one** group in `rewardGroups`. Join several groups with `ctx.t("or")`; the group with `state: "applied"` is the one charged.
 
-Each reward has `id`, `selectorIds` (what it lowers), `slice`, and an `outcome` to put into words:
+Each reward has `id`, `selectorIds` (what it lowers), `slice`, and an `outcome`. Word it as `rewardSentence` in [tier cards](#tier-cards) does; for `unknown`, say nothing or `ctx.t("Discount")`.
 
-| `outcome` | Copy |
-| --- | --- |
-| `{ kind: "percentOff", percent }` | `ctx.t("Save {{percent}}%", …)` or `ctx.t("{{percent}}% off {{what}}", …)` |
-| `{ kind: "amountOff", amount, per: "unit" }` | `ctx.t("{{amount}} off each", …)` |
-| `{ kind: "amountOff", per: "total" }` | `ctx.t("{{amount}} off", …)` |
-| `{ kind: "amountOff", per: "selector" }` | `ctx.t("{{amount}} off {{what}}", …)` |
-| `{ kind: "setPrice", price, per: "total" }` | `ctx.t("All for {{price}}", …)` |
-| `{ kind: "setPrice", per: "unit" }` | `ctx.t("{{price}} each", …)` |
-| `{ kind: "setPrice", per: "selector" }` | `ctx.t("{{what}} for {{price}}", …)` |
-| `{ kind: "unknown" }` | Say nothing, or `ctx.t("Discount")` |
+`slice` is `null` when the reward lowers every unit the tier used; otherwise `{ after, maxUnits, sort }`: units skipped first, then the most it lowers, cheapest first. "Buy 3, get 1 free" is 100% off with `{ after: 3, maxUnits: 1 }`.
 
-`slice` is `null` when the reward lowers every unit the tier used. Otherwise it is `{ after, maxUnits, sort }`: the units it skips first, and the most it lowers after them, cheapest first. "Buy 3, get 1 free" is 100% off with `{ after: 3, maxUnits: 1 }` — of 4 units, 1 is free.
-
-The outcome is for words only. Never work a price out of it — prices come from `selections`, `summary`, and `ifChosen`. A reward is applied when some selection's `rewardIds` names it.
+Never derive prices from `outcome`. A reward is applied when a selection's `rewardIds` names it.
 
 ### Comparing before a tap
 
-`tier.ifChosen.summary` (`was`, `now`, `saved`, `unitCount`) and `tier.ifChosen.selections` (selector id → rows) are the bundle after a tap. Show them on a tier card so the shopper can compare. An add-on tier with nothing picked yet is priced with one unit of each, so its price shows before the pick.
+Show `tier.ifChosen.summary` (and `selections`, by selector id) on tier cards. An add-on tier with nothing picked is priced with one unit of each. A chosen tier has `ifChosen: null` (tapping it clears the choice); draw it from current selections and `view.summary`.
 
-A chosen tier has `ifChosen: null` — tapping it again only clears the choice. Draw it from `selector.selections` and `view.summary` as they are.
-
-When to draw a tier as a control is under [Tier controls](/data-attributes#tier-controls). Write `ctx.t("Add {{count}} more", …)` from a positive `toAddTotal`, or name each selector from `toAdd`.
+Tier controls: see [Tier controls](/data-attributes#tier-controls). Write `ctx.t("Add {{count}} more", …)` from a positive `toAddTotal`, or name each selector from `toAdd`.
 
 ## Summary
 
@@ -215,35 +155,33 @@ interface ViewSummary {
 }
 ```
 
-Take the footer from `view.summary`, never from your own sum of the rows.
+Take the footer from `view.summary`, never your own sum.
 
 ## Subscriptions
 
-`view.subscriptions` is `null` when the bundle sells one-time only — the default. Then draw **no** plan control anywhere.
+`view.subscriptions` is `null` when the bundle sells one-time only (the default). Then draw **no** plan control.
 
-When it is set, draw one plan `<select>` per picked item whose chosen variant has `plans`:
+When set, draw one plan `<select>` per picked item whose chosen variant has `plans`:
 
-- List the `plans` of **that item's own chosen variant**, each with its `name` and `price.text`. Subscription apps mint a different plan id per variant, so never build a shared list by hand.
-- Offer a one-time option (`value=""`) only when the product's `subscriptionOnly` is false.
-- Mark selected whatever `selection.planId` holds. It is `null` (one-time) until the shopper chooses. Never preselect a plan.
-- Draw no control for a variant with empty `plans`.
-- The selection's prices already reflect the chosen plan.
+- List **that item's own chosen variant's** `plans` (`name`, `price.text`); never build a shared list by hand.
+- Offer one-time (`value=""`) only when the product's `subscriptionOnly` is false.
+- Select what `selection.planId` holds (`null` = one-time). Never preselect a plan.
 
-**One shared plan control** is the alternative, for a design that asks for one subscription choice for the whole bundle. Use it only while `view.subscriptions.sharedPlanOffered` is true — the engine sets it when every selector draws one fixed product on this page. It also covers rows picked unit by unit.
+Alternatively, draw **one shared plan control** for the whole bundle, only while `sharedPlanOffered` is true. It also covers rows picked unit by unit.
 
 | Field | Meaning |
 | --- | --- |
-| `sharedPlanOffered` | One choice for the whole bundle is possible |
+| `sharedPlanOffered` | One choice for the whole bundle is possible (every selector draws one fixed product on this page) |
 | `sharedGroups` | Selling-plan group names every picked item can be bought on now |
-| `selectedGroup` | The chosen group; `null` = one-time, or the items are on different groups |
-| `sharedPlans` | Plans every picked unit can be bought on: `{ id, name }[]`. Pick one with the shared plan control |
-| `selectedPlan` | The shared plan every picked unit is on; `null` = one-time, or the units are on different plans |
+| `selectedGroup` | The chosen group; `null` = one-time, or items are on different groups |
+| `sharedPlans` | Plans every picked unit can be bought on: `{ id, name }[]` |
+| `selectedPlan` | The shared plan every picked unit is on; `null` = one-time, or units are on different plans |
 
-Offer only `sharedGroups`. When it is empty, say in words that the items share no subscription — don't draw an empty `<select>`. Never draw per-item plan controls beside the shared one. A group control puts each item on the first plan of that group its variant is sold on. To let the shopper choose a frequency, use the shared plan control with `sharedPlans` instead.
+Offer only `sharedGroups`; when empty, say the items share no subscription instead of drawing an empty `<select>`. Never combine per-item and shared controls. A group control puts each item on the first plan of that group its variant is sold on; to let the shopper choose a frequency, use `sharedPlans`.
 
 ## Add-to-cart state
 
-See [Renderer function → Add-to-cart button](/renderer-function#add-to-cart-button).
+Usage: [Renderer function → Add-to-cart button](/renderer-function#add-to-cart-button).
 
 ```ts
 interface ViewAddToCart {
@@ -355,59 +293,13 @@ interface ViewSubscriptions {
 }
 ```
 
-Treat every id as an opaque string: copy it into attributes exactly as the view gives it, and never parse or rebuild it.
+Treat every id as opaque: copy it as given; never parse or rebuild it.
 
 ## Examples
 
-### Collection rows
-
-One row per product, for a collection selector whose `asPageProduct` is false. Every control on the row carries both the selector id and `data-nameless-product-id`:
-
-```js
-function pickedEntry(sel, productId) {
-  for (var i = 0; i < sel.selections.length; i++) {
-    if (sel.selections[i].productId === productId) return sel.selections[i];
-  }
-  return null;
-}
-
-var rows = sel.products
-  .map(function (product) {
-    var picked = pickedEntry(sel, product.id);
-    var shownId = picked ? picked.variantId : product.defaultVariantId;
-    var options = product.variants
-      .map(function (variant) {
-        return (
-          '<option value="' + esc(variant.id) + '"' +
-          (variant.id === shownId ? " selected" : "") + ">" + esc(variant.title) + "</option>"
-        );
-      })
-      .join("");
-    return (
-      '<li id="nb-' + esc(v.bundleId) + "-row-" + esc(sel.id) + "-" + esc(product.id) + '" class="nb-item">' +
-      '<span class="nb-item__title">' + esc(product.title) + "</span>" +
-      '<select data-nameless-variant-selector="' + esc(sel.id) + '"' +
-      ' data-nameless-product-id="' + esc(product.id) + '">' + options + "</select>" +
-      '<input type="number" min="0" step="1" value="' + (picked ? picked.quantity : 0) + '"' +
-      ' data-nameless-qty-selector="' + esc(sel.id) + '"' +
-      ' data-nameless-product-id="' + esc(product.id) + '">' +
-      "</li>"
-    );
-  })
-  .join("");
-
-var loadMore =
-  sel.moreProducts === "none"
-    ? ""
-    : '<button type="button" class="nb-more" data-nameless-load-more="' + esc(sel.id) + '"' +
-      (sel.moreProducts === "loading" ? " disabled" : "") + ">" +
-      (sel.moreProducts === "failed" ? ctx.t("Try again") : ctx.t("Show more")) +
-      "</button>";
-```
-
 ### Tier cards
 
-One card per tier. The card carries only the tier id; the engine works out the quantities. Names come from `requirements`, sentences from `outcome`, prices from `ifChosen`, and what's missing from `toAdd`. `heading` is the helper from the [minimal example](/renderer-function#minimal-example).
+One card per tier, carrying only the tier id. `heading` is from the [minimal example](/renderer-function#minimal-example).
 
 ```js
 // `heading` must guard an empty `products` list in real code.
@@ -483,38 +375,4 @@ var tierCards = v.tiers
     );
   })
   .join("");
-```
-
-### Per-item plan control
-
-Only when `view.subscriptions` is set. Returns `""` for an item with no plans.
-
-```js
-function planSelect(sel, product, picked) {
-  if (!v.subscriptions || !picked) return "";
-  var variant = null;
-  for (var i = 0; i < product.variants.length; i++) {
-    if (product.variants[i].id === picked.variantId) variant = product.variants[i];
-  }
-  var plans = (variant && variant.plans) || [];
-  if (plans.length === 0) return "";
-
-  var options = product.subscriptionOnly
-    ? ""
-    : '<option value=""' + (picked.planId ? "" : " selected") + ">" + ctx.t("One-time") + "</option>";
-  options += plans
-    .map(function (plan) {
-      return '<option value="' + esc(plan.id) + '"' + (picked.planId === plan.id ? " selected" : "") + ">" +
-        esc(plan.name) + " — " + esc(plan.price.text) + "</option>";
-    })
-    .join("");
-
-  return (
-    '<select class="nb-item__plan" data-nameless-selling-plan-selector="' + esc(sel.id) + '"' +
-    (sel.itemType === "collection" && !sel.asPageProduct
-      ? ' data-nameless-product-id="' + esc(product.id) + '"'
-      : "") +
-    ">" + options + "</select>"
-  );
-}
 ```

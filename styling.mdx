@@ -3,7 +3,7 @@ title: "Styling"
 description: "Scope CSS so it only touches this bundle’s widget"
 ---
 
-Write `[data-nameless-widget]` as your root selector. At inject time the host rewrites every occurrence to `[data-nameless-widget="{bundleId}"]`, so each bundle’s CSS can only touch its own widget:
+Root every rule at `[data-nameless-widget]`; the host scopes it to the bundle’s own widget:
 
 ```css
 [data-nameless-widget] .nb-bundle {
@@ -20,12 +20,8 @@ Write `[data-nameless-widget]` as your root selector. At inject time the host re
 }
 ```
 
-| Do | Don’t |
-| --- | --- |
-| Prefix your own classes with a namespace (e.g. `nb-`) | Style bare elements globally (`button {}`, `img {}`, `* {}`) |
-| Keep every rule under `[data-nameless-widget]` | Style theme classes or anything your renderer doesn’t emit |
-| Inherit typography (`font-family: inherit`) so you match the theme | `@import` external stylesheets or pull in remote web fonts |
+- Prefix your classes (e.g. `nb-`) and inherit typography (`font-family: inherit`).
+- Don’t style bare elements (`button {}`, `img {}`, `* {}`), theme classes, or markup your renderer doesn’t emit.
+- Don’t `@import` stylesheets or load remote web fonts.
 
-The CSS and the renderer are one unit: every class the CSS targets must be emitted by the renderer, and vice versa. Pick one vocabulary (BEM-ish `nb-block__element--modifier` works well) and keep both assets in sync.
-
-Write semantic, labelled markup so the widget still works if styling breaks.
+Keep CSS and renderer classes in sync. Use semantic, labelled markup so the widget works unstyled.

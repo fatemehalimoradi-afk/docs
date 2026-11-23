@@ -3,71 +3,46 @@ title: "Create a bundle"
 description: "Create a bundle from a bundle type or with the Bundle Engine"
 ---
 
-In Fast Bundle 2.0, click **Create bundle**. The **Choose bundle type** page offers two paths:
-
-- **A bundle type card** → **Choose** (and a preset, if the type has several). A ready form for one shape of offer. Fast Bundle 2.0 builds the logic and the widget from your answers.
-- **Build with AI** ("Describe it. The engine builds it."). The Bundle Engine works out the structure, the pricing and discount logic, and the widget. You can also build by hand.
-
-Which bundle type cards you see depends on your store. Cards marked **Coming soon** can't be built yet.
+Click **Create bundle**, then on **Choose bundle type** pick a bundle type card → **Choose** (and a preset, if offered), or click **Build with AI**. Cards marked **Coming soon** can't be built yet.
 
 ## From a bundle type
 
-Each type has its own form. A **Fixed bundle**, for example, has:
+Each type has its own form. A **Fixed bundle**:
 
-1. **The offer** — the products and the discount. For example, a **Fixed bundle** has **Included products** (at least 2) and a **Discount** with **Discount type**: **Percentage off**, **Fixed discount**, **Set price**, **Free shipping**, or **No discount**.
-2. **Display options → Upsell on included product pages** — its **Title** and **Visibility**.
-3. **Bundle as Product** and **Extras → Subscription**, when you want them.
-4. **Settings** — **Name** (only you see it), price display such as **Show price per item** and **Unit label**, and variant choices such as **Let customers choose different variants for each item**.
-5. **Style** — colors, typography, corner radius, and **Custom CSS**. See [Styling a bundle type](#styling-a-bundle-type).
-6. **Content and translations** — the widget's wording in each of your store languages.
+1. **The offer** — **Included products** (at least 2) and a **Discount** with **Discount type**: **Percentage off**, **Fixed discount**, **Set price**, **Free shipping**, or **No discount**.
+2. **Display options → Upsell on included product pages** — **Title** and **Visibility**.
+3. **Bundle as Product** and **Extras → Subscription** (optional).
+4. **Settings** — **Name** (only you see it), price display (**Show price per item**, **Unit label**), and variant choice (**Let customers choose different variants for each item**).
+5. **Style** — see [Styling a bundle type](#styling-a-bundle-type).
+6. **Content and translations** — wording per store language.
 
-A new bundle from a bundle type starts as **Active**. Save to publish it; the sync badge shows **Syncing with Shopify** and then **Synced**.
-
-Other types organize their forms differently (for example **Extras** for add-ons). In any bundle type, the **Subscription** section's **Apply the bundle discount to** is a store-wide setting: it changes every bundle in your shop, like **Settings → Subscription discount**. Bundle type forms have no placement fields: position and hidden elements come from **Settings** — for all bundles, or per bundle type under **Advanced**.
+It starts as **Active**. Save to publish; the badge shows **Syncing with Shopify**, then **Synced**. **Apply the bundle discount to** (under **Subscription**) is store-wide, like **Settings → Subscription discount**. Position and hidden elements come from [Store-wide settings](#store-wide-settings).
 
 ### Mix and match
 
-The **Mix and match** bundle type lets shoppers build their own bundle step by step:
-
-- **Steps** — each **Step #N** has a **Title**, an optional **Description** and **Image**, a collection to pick from, and **Rules**: **Exact**, **Minimum**, **Range**, or **Optional** (with an optional maximum). **Add step** adds the next one.
-- **Discount** — tiers by how many items the shopper picks (**Exactly**, **Between**, or **Minimum** for the last tier), each with a reward: **Percentage discount**, **Fixed discount**, **Set price**, **Cheapest item free**, **Free shipping**, or **No discount**.
-- **Bundle builder → Product layout** — **Built into product page** adds the builder next to the product images. **Expanded builder** replaces the bundle's product page with the builder; a bundle without a product opens the builder on its own **Bundle page**.
-- **Upsell on included product pages** — on the pages of products from your steps, show **Build on the page** (shoppers build the bundle right there) or **Go to bundle builder** (a compact card that links to the builder).
+- **Steps** — each **Step #N** has a **Title**, optional **Description** and **Image**, a collection, and **Rules**: **Exact**, **Minimum**, **Range**, or **Optional** (with an optional maximum). **Add step** adds another.
+- **Discount** — tiers by item count (**Exactly**, **Between**, or **Minimum** for the last tier), each with **Percentage discount**, **Fixed discount**, **Set price**, **Cheapest item free**, **Free shipping**, or **No discount**.
+- **Bundle builder → Product layout** — **Built into product page** (next to the product images) or **Expanded builder** (replaces the bundle's product page; a bundle without a product opens on its own **Bundle page**).
+- **Upsell on included product pages** — **Build on the page** or **Go to bundle builder**.
 - **Extras** — an **Add-on** block and a **Subscription** section.
 
 ### Styling a bundle type
 
-The **Style** card has two tabs:
+The **Style** card sets **Color**, **Typography**, **Spacing** (corner radius), and **Custom CSS** in two tabs: **Global theme** (every bundle using it) and **Custom design** (this bundle only; wins over the global theme).
 
-- **Global theme** — applies to every bundle that uses it. Changes here restyle all of them.
-- **Custom design** — this bundle only. Its values win over the global theme.
-
-Both cover **Color**, **Typography**, **Spacing** (corner radius), and **Custom CSS**.
-
-Wording shared by all bundles of a type ("Add to Cart", "Sold out", "Total") is under **Translate shared texts of all bundles** → **Open editor**.
-
-**Settings → Bundle types → Republish all bundles** rebuilds the storefront data of every bundle made from a bundle type. Your settings and products don't change.
+Shared wording such as "Add to Cart" is under **Translate shared texts of all bundles** → **Open editor**. **Settings → Bundle types → Republish all bundles** rebuilds every bundle type bundle's storefront data.
 
 ## With the Bundle Engine
 
-**Build with AI** opens **Generate Your Bundle with AI**. Describe the bundle — mention products and collections with the mention menu, or attach an image — and click the arrow button (**Generate bundle**). Or choose **Make it manually here**.
-
-The editor has two tabs and a live **Preview**:
-
-- **AI chat** — ask for changes in plain words ("make tier 2 25% off", "put the price under the title").
-- **Form** — edit every piece directly.
-
-A Bundle Engine bundle starts as **Draft**.
+In **Generate Your Bundle with AI**, describe the bundle (mention products and collections, or attach an image) and click **Generate bundle**, or choose **Make it manually here**. The editor has a live **Preview**, an **AI chat** tab for changes in plain words, and a **Form** tab. It starts as **Draft**.
 
 ### The Form tab
 
 | Card | What you set |
 | --- | --- |
-| General | **Name** (only you see it) and **Discount label** (shoppers see it next to the discount in cart and checkout) |
-| **Products used in logic** | Product sets: **Add product**, **Add variant**, **Add collection**, **Add every product**, and (except for a variant) **Matching items must be** |
-| Offers | **Set up an offer for this bundle**, **Add tier**, and for each tier its **Conditions** and **Rewards** |
-
-See [Bundle concepts](/bundle-concepts) for what each piece means.
+| General | **Name** (only you see it) and **Discount label** (shown next to the discount in cart and checkout) |
+| **Products used in logic** | Product sets — see [Bundle concepts](/bundle-concepts) |
+| Offers | **Set up an offer for this bundle**, **Add tier**, and each tier's **Conditions** and **Rewards** |
 
 ### Display options
 
@@ -76,51 +51,44 @@ Under **Display options → Product detail page**:
 | Setting | Options |
 | --- | --- |
 | **Show this bundle on product pages** | On by default |
-| **Show on** | **All the included product pages**, or **Selected products' pages** |
-| **Display as** | **Inline widget** (default) or **Pop-up**. With **Pop-up**, **Widget position** and **Add-to-cart method** are replaced by **Pop-up trigger: Theme add-to-cart button** |
+| **Show on** | **All the included product pages** or **Selected products' pages** |
+| **Display as** | **Inline widget** (default) or **Pop-up**. **Pop-up** replaces position and add-to-cart method with **Pop-up trigger: Theme add-to-cart button** |
 | **Widget position** | **Above** or **Below** (default) the **Theme's add-to-cart button**, or a **Custom element** by CSS selector |
-| **Add-to-cart method** | **Using widget button** (default): the widget's own button adds the bundle. **Using theme button**: the theme's add-to-cart button adds the bundle instead of the product |
-| **Code** | **JS code** and **CSS code** — the widget. See [Widget](/widget) |
-| **Content and translation** | The widget's wording per language. **Translate EN → FR** fills empty fields with AI and keeps text you typed |
-| **App block** | A **Display handle** to place the widget with the theme's app block. See [Shopify integration](/shopify-integration#placing-the-widget) |
-| **Advanced** | **Display priority** (default 1; lower shows first when several bundles match one product) and **Hide elements** (CSS selectors of theme elements to hide) |
+| **Add-to-cart method** | **Using widget button** (default) or **Using theme button**. See [Add-to-cart method](/shopify-integration#add-to-cart-method) |
+| **Code** | **JS code** and **CSS code**. See [Widget](/widget) |
+| **Content and translation** | Wording per language; **Translate EN → FR** fills empty fields |
+| **App block** | A **Display handle** for the theme's app block. See [Placing the widget](/shopify-integration#placing-the-widget) |
+| **Advanced** | **Display priority** (default 1; lower shows first) and **Hide elements** (CSS selectors) |
 
 ### Bundle as Product
 
-The **Bundle as Product (BAP)** card sells the bundle as its own Shopify product, with its own product page. Turning it on creates a new product in Shopify.
+The **Bundle as Product (BAP)** card creates a Shopify product and page for the bundle.
 
-- **Product title** and **Price** are required; **Compare-at price** is optional and must be higher than the price.
-- **Product description and media** — or **Edit product on Shopify**.
-- The product page has its own **Widget position**, **Add-to-cart method**, **Code**, **Content and translation**, and **Hide elements**. With no code of its own, it uses the product page's code.
-- Turning it off (**Turn off and delete**) deletes the product from Shopify. Orders are not affected.
+- **Product title** and **Price** are required; **Compare-at price** must be higher than the price.
+- Its page has its own **Widget position**, **Add-to-cart method**, **Code**, **Content and translation**, and **Hide elements**; without code it uses the product page's code.
+- **Turn off and delete** deletes the product from Shopify; orders are not affected. Drafting or archiving the product turns the bundle off.
 
-The product's status and the bundle's status are one: drafting or archiving the product in Shopify turns the bundle off. Sales channels and markets are set in Shopify. See [Shopify integration](/shopify-integration#bundle-as-product) for how it behaves on the store.
+See [Bundle as Product](/shopify-integration#bundle-as-product).
 
 ### Subscriptions
 
-In the **Subscriptions** card, turn on **Let customers buy this bundle on a subscription**. The widget then offers the selling plans your subscription app defines for each product.
-
-By default the bundle discount applies to the first subscription payment. Change it in **Settings → Subscription discount**: **First payment only**, **Multiple recurring payments**, or **All recurring payments**.
+Turn on **Let customers buy this bundle on a subscription** to offer each product's selling plans.
 
 ## Status and publishing
 
-- **Status: Active** — the bundle shows on the store and gets the checkout discount.
-- **Status: Draft** — hidden. To preview it on your store, add `?nameless_preview=true` to a product page URL (in the Bundle Engine editor, **View on store** does this for you). Previews don't get the discount.
+- **Active** — shows on the store and gets the checkout discount.
+- **Draft** — hidden. Preview it with `?nameless_preview=true` on a product URL (or **View on store**). Previews don't get the discount.
 
-After saving, a banner says **Bundle is live**, **Bundle is in draft**, or **Bundle needs a UI** (a Bundle Engine bundle with no widget code yet).
-
-If a save is refused for size, see [Troubleshooting](/troubleshooting#save-is-refused).
+**Bundle needs a UI** after saving means there's no widget code yet. If a save is refused for size, see [Troubleshooting](/troubleshooting#save-is-refused).
 
 ## Store-wide settings
 
-In Fast Bundle 2.0 **Settings**:
+In **Settings**:
 
 | Setting | What it does |
 | --- | --- |
-| **Default widget position** | The CSS selector bundles are placed next to by default, and its **Position**: **Each bundle's own position** (default), **Above the element**, or **Below the element**. **Advanced** sets a selector and position per bundle type |
-| **Hide elements** | CSS selectors of theme elements every bundle hides. **Advanced** adds a list per bundle type |
-| **Widget button action** | What shoppers see after the widget's button adds the bundle: **Cart drawer** (default), **Checkout**, **Cart page**, or **Do nothing**. **Advanced → Don't use the theme's add-to-cart button** makes every bundle use the widget's own button |
-| **Subscription discount** | Which subscription payments get the bundle discount: **First payment only**, **Multiple recurring payments** (with a number of **Payments**), or **All recurring payments** |
-| **Discount combinations** | Whether bundle discounts combine with **Product discounts**, **Order discounts**, and **Shipping discounts** (all on by default) |
-
-For other sales channels, see [Integrations](/integrations).
+| **Default widget position** | Default CSS selector and **Position**: **Each bundle's own position** (default), **Above the element**, or **Below the element**. **Advanced** sets one per bundle type |
+| **Hide elements** | Theme elements every bundle hides. **Advanced** adds a list per bundle type |
+| **Widget button action** | After the widget's button adds: **Cart drawer** (default), **Checkout**, **Cart page**, or **Do nothing**. **Advanced → Don't use the theme's add-to-cart button** makes every bundle use its own button |
+| **Subscription discount** | **First payment only** (default), **Multiple recurring payments** (with a number of **Payments**), or **All recurring payments** |
+| **Discount combinations** | Combine with **Product discounts**, **Order discounts**, **Shipping discounts** (all on by default) |

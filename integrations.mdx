@@ -3,37 +3,31 @@ title: "Integrations"
 description: "Choose how Fast Bundle 2.0 reaches your storefront, and what you build"
 ---
 
-Fast Bundle 2.0 works on a Shopify theme out of the box. Every other surface is an **integration**. Before you start, pick a path — they differ in what your team builds and what Fast Bundle 2.0 guarantees.
+Fast Bundle 2.0 works on a Shopify theme out of the box. For other surfaces, pick a path:
 
-## Choose a path
-
-| Path | You build | Fast Bundle 2.0 handles |
-| --- | --- | --- |
-| **Bundle type** on a Shopify theme | Nothing — fill in a form | Everything |
-| [**Custom widget**](/widget) on a Shopify theme | The widget's HTML and CSS | Picks, prices, tiers, cart, discount |
-| [**Headless embed**](/headless-bundles-api) | An iframe and a cart handler | Picks, prices, tiers, discount tag, discount |
-| [**Tapcart**](/tapcart) | Nothing — place the block | Everything; Tapcart's cart adds the lines |
-| [**Headless Data API**](/headless-bundles-api) | The whole UI, price display, discount tag, and cart | Bundle data, and the discount at checkout |
-
-Who owns each responsibility:
+| Path | You build |
+| --- | --- |
+| **Bundle type** on a Shopify theme | Nothing — fill in a form |
+| [**Custom widget**](/widget) on a Shopify theme | The widget's HTML and CSS |
+| [**Headless embed**](/headless-bundles-api) | An iframe and a cart handler |
+| [**Tapcart**](/tapcart) | Nothing — place the block |
+| [**Headless Data API**](/headless-bundles-api) | The whole UI, price display, discount tag, and cart |
 
 | | Bundle type | Custom widget | Headless embed | Tapcart | Data API |
 | --- | --- | --- | --- | --- | --- |
-| Selection state (picks, tier choice) | Fast Bundle 2.0 | Fast Bundle 2.0 | Fast Bundle 2.0 | Fast Bundle 2.0 | **You** |
+| Selection state | Fast Bundle 2.0 | Fast Bundle 2.0 | Fast Bundle 2.0 | Fast Bundle 2.0 | **You** |
 | Prices and savings shown | Fast Bundle 2.0 | Fast Bundle 2.0 (you draw them) | Fast Bundle 2.0 | Fast Bundle 2.0 | **You** |
-| Discount tag on cart lines (`__FB_ATC_UID`) | Fast Bundle 2.0 | Fast Bundle 2.0 | Fast Bundle 2.0 writes it; **you** keep it on the lines | Fast Bundle 2.0 | **You** write it |
+| `__FB_ATC_UID` tag | Fast Bundle 2.0 | Fast Bundle 2.0 | Fast Bundle 2.0 writes it; **you** keep it | Fast Bundle 2.0 | **You** write it |
 | Adding lines to the cart | Fast Bundle 2.0 | Fast Bundle 2.0 | **You** | Tapcart | **You** |
 | Discount at checkout | Fast Bundle 2.0 | Fast Bundle 2.0 | Fast Bundle 2.0 | Fast Bundle 2.0 | Fast Bundle 2.0 |
 
-The discount at checkout is always applied by Fast Bundle 2.0's Shopify discount function, from the bundle's own rules. On every path except the Data API, the price the shopper sees comes from the same engine checkout uses. With the Data API, your UI only approximates it — if your price or tag disagrees with the rules, checkout wins and the shopper sees a different price. Prefer the embed unless you need full control of the UI.
-
-Bundles are created and edited in Fast Bundle 2.0 admin. The public API reads bundles and embeds them; it doesn't create or edit them.
+With the Data API, your displayed price only approximates checkout, which always wins — prefer the embed unless you need full UI control. Bundles are edited only in Fast Bundle 2.0 admin.
 
 <CardGroup cols={2}>
   <Card title="Tapcart" icon="mobile" href="/tapcart">
     Add the Fast Bundle 2.0 block to your Tapcart product page.
   </Card>
   <Card title="Headless" icon="code" href="/headless-bundles-api">
-    Embed the widget or use the bundle data API on a custom storefront, Hydrogen, or mobile app.
+    Embed the widget or use the data API on a custom storefront, Hydrogen, or mobile app.
   </Card>
 </CardGroup>

@@ -3,125 +3,92 @@ title: "Shopify integration"
 description: "How Fast Bundle 2.0 runs on a Shopify Liquid storefront and at checkout"
 ---
 
-On a standard Shopify Liquid theme, Fast Bundle 2.0 uses these pieces:
-
 | Piece | Role |
 | --- | --- |
-| Theme app extension | Loads bundle data and draws the widget on product pages |
-| Cart line-item property `__FB_ATC_UID` | Tags each bundle line so checkout can find the bundle |
-| Discount function | Applies the bundle's rewards at checkout, on products and on shipping |
+| Theme app extension | Draws the widget on product pages |
+| Cart line-item property `__FB_ATC_UID` | Tags each bundle line for checkout |
+| Discount function | Applies the rewards at checkout, on products and shipping |
 
-You don't need the theme app extension for [headless endpoints](/headless-bundles-api) or [Tapcart](/tapcart). Those load from the Fast Bundle 2.0 app origin, `https://app.fastbundle.co`.
+[Headless](/headless-bundles-api) and [Tapcart](/tapcart) don't need the theme app extension.
 
 ## The app embed
 
-Turn on the app embed in **Online Store → Themes → Customize → App embeds**. It is listed as **Bundles**. It has no settings: it runs Fast Bundle 2.0 on every page of your store, finds the bundles that match the product page, and places their widgets.
-
-Bundle data comes with the page itself, from your store's Shopify data, so there's no extra request on most product pages. After you save a bundle, Fast Bundle 2.0 syncs it to Shopify in the background; reload the page once the editor shows **Synced**. On some pages (very large collections, or a block that names a bundle) the widget fetches its data instead, and a browser session can keep that copy for up to 5 minutes.
+Turn on the **Bundles** embed in **Online Store → Themes → Customize → App embeds**. After saving a bundle, reload once the editor shows **Synced** (some pages may keep a cached copy for up to 5 minutes).
 
 ### Which bundles show on a product page
 
-A bundle shows on a product page when it is **Active**, its display is on (**Show this bundle on product pages**), and one of its product sets matches the page:
-
-- a product set for that product, or for one of its variants
-- a collection set the product belongs to
-- an **every product** set
-- or the page is the bundle's own [Bundle as Product](#bundle-as-product) page
-
-With **Show on → Selected products' pages**, only the product sets you selected make the bundle show. A bundle is also skipped when no tier can be met with products the store can sell (console: `BUNDLE_UNSELLABLE`). When several bundles match, they show in **Display priority** order (lower first).
+A bundle shows when it is **Active**, **Show this bundle on product pages** is on, and a product set matches the page (the product or a variant, a collection it belongs to, an **every product** set, or its own [Bundle as Product](#bundle-as-product) page). With **Show on → Selected products' pages**, only the selected sets count. Bundles whose tiers can't be met with sellable products are skipped (console: `BUNDLE_UNSELLABLE`). Matches show in **Display priority** order (lower first).
 
 ## Placing the widget
 
-Fast Bundle 2.0 places each widget automatically, in this order:
+Fast Bundle 2.0 places each widget at the first of:
 
-1. Where you placed the theme's app block for that bundle (see below).
-2. The bundle's **Custom element** selector, when its **Widget position** is relative to one.
+1. The theme's app block for that bundle (see below).
+2. The bundle's **Custom element** selector.
 3. The bundle type's selector from **Settings → Default widget position → Advanced**.
-4. The store's **Default widget position** from **Settings**.
+4. The store's **Default widget position**.
 5. The theme's add-to-cart button, found automatically.
-6. The end of the product section, or of the page if there is none. The console warns when this happens — set a widget position.
+6. The end of the product section or page (the console warns — set a widget position).
 
-Each selector carries its own side. A bundle-type or store selector uses the **Position** set with it in **Settings**; when that is **Each bundle's own position**, the bundle's **Above** or **Below** applies.
+A bundle-type or store selector uses its own **Position**; with **Each bundle's own position**, the bundle's **Above** or **Below** applies.
 
-If the theme redraws the product section, Fast Bundle 2.0 puts the widget back. Several widgets on the same spot stack in priority order, with a 16px gap your theme can change with the CSS variable `--nameless-bundle-gap`.
-
-**Hide elements** (per bundle under **Advanced**, per bundle type, or store-wide in **Settings** — all of them apply together) hides theme elements by CSS selector while the widget shows — for example, the theme's own quantity picker.
+Widgets on one spot stack with a 16px gap (`--nameless-bundle-gap`). **Hide elements** lists (per bundle, per bundle type, and store-wide) all apply.
 
 ### The app block
 
-To put the widget in an exact spot, use the theme's app block:
-
 1. In the bundle editor, open **App block** and **Copy display handle**.
-2. Open your theme editor on a product template.
+2. In the theme editor, open a product template.
 3. Add the **Bundle** app block where the widget should go.
-4. Paste the handle into its **Bundle metaobject handle** setting.
+4. Paste the handle into **Bundle metaobject handle**.
 
-Leave the setting empty to show whichever bundles match the product.
+Leave it empty to show whichever bundles match.
 
 ### Pop-up
 
-With **Display as → Pop-up**, the widget opens in a dialog when the shopper clicks the theme's add-to-cart button, instead of the theme adding the product. One pop-up per page: the highest-priority pop-up bundle wins. The dialog closes after the bundle is added, or with the close button, Esc, or a click outside.
+With **Display as → Pop-up**, the theme's add-to-cart button opens the widget in a dialog. Only the highest-priority pop-up shows.
 
 ## Add-to-cart method
 
-| **Add-to-cart method** | What the shopper clicks |
-| --- | --- |
-| **Using widget button** (default) | The widget's own add-to-cart button |
-| **Using theme button** | The theme's add-to-cart button, which adds the bundle instead of the product |
+**Using widget button** (default): the widget's own button adds the bundle. **Using theme button**: the theme's add-to-cart button adds the bundle instead of the product. With the theme button:
 
-With the theme button:
-
-- Fast Bundle 2.0 intercepts the theme's add-to-cart once the widget has drawn, and adds the bundle's lines.
-- The theme form's variant and quantity feed the product set for the page's product. On a Bundle as Product page, a quantity of N adds N bundles, each discounted on its own.
-- The widget draws no add-to-cart button of its own.
-- One bundle per page takes the theme button: the first in priority order. Other bundles that would take it aren't shown.
-- It works best for **a main product plus optional picks**. A bundle made only of a collection list isn't supported.
-- After the add, the theme's cart drawer opens.
-- With **Settings → Widget button action → Advanced → Don't use the theme's add-to-cart button** on, no bundle takes the theme's button and every widget shows its own. A Bundle as Product page still turns an add of its product into the bundle.
+- The theme form's variant and quantity feed the page product's set. On a Bundle as Product page, quantity N adds N bundles.
+- The widget draws no button of its own.
+- Only the first bundle in priority order takes the button; others that would take it aren't shown.
+- Best for **a main product plus optional picks**. A bundle made only of a collection list isn't supported.
+- The theme's cart drawer opens after the add.
+- **Settings → Widget button action → Advanced → Don't use the theme's add-to-cart button** turns this off for every bundle; a Bundle as Product page still turns an add of its product into the bundle.
 
 Developers can wrap this pipeline — see [Resolver stages](/resolver-stages).
 
 ## After add-to-cart
 
-When the widget's own button adds a bundle, **Settings → Widget button action** decides what happens next:
+**Settings → Widget button action** sets what happens after the widget's button adds a bundle:
 
 | Action | Result |
 | --- | --- |
-| **Cart drawer** (default) | Opens the cart drawer. Fast Bundle 2.0 recognizes common cart apps and themes (including Horizon, Dawn, Prestige, Impulse, and Expanse); if none is found, the shopper goes to the cart page |
+| **Cart drawer** (default) | Opens the cart drawer of common themes and cart apps; otherwise goes to the cart page |
 | **Cart page** | Goes to `/cart` |
 | **Checkout** | Goes to checkout |
-| **Do nothing** | Stays on the page; the cart count refreshes |
+| **Do nothing** | Stays; the cart count refreshes |
 
-A theme with a custom drawer can register its own handlers with `window.nameless.registerShopThemeScript({ open, refresh?, cartCount? })` from a script your store's Fast Bundle 2.0 configuration loads. When registered, it replaces drawer detection; if it fails, the shopper goes to the cart page.
+A custom drawer can register `window.nameless.registerShopThemeScript({ open, refresh?, cartCount? })` from a script your store's Fast Bundle 2.0 configuration loads; if it fails, the shopper goes to the cart page.
 
 ## Checkout
 
-Shoppers pay in **Shopify checkout**. Fast Bundle 2.0's discount function — a Shopify Function shipped with the app — applies the bundle rewards: product discounts on the bundle's lines, and shipping rewards on delivery options.
+The discount function applies rewards in **Shopify checkout**. Keep the automatic discount **FastBundle (DO NOT DELETE)** **Active** in Shopify admin → **Discounts**; don't delete or rename it.
 
-Keep Fast Bundle 2.0's automatic discount **Active** in Shopify admin → **Discounts**. Its title is **FastBundle (DO NOT DELETE)**. Don't delete or rename it.
+- Every line of a bundle add carries `__FB_ATC_UID`; if a cart app or theme strips it, items stay at **full price**. Two adds of the same bundle are two bundles.
+- Checkout uses the bundle's current settings. Only **Active** bundles get the discount.
+- The widget doesn't show discount codes or other apps' discounts, so its total can differ from checkout. **Settings → Discount combinations** controls combining.
 
-How it finds the bundle:
-
-- Every line of a bundle add carries the line-item property `__FB_ATC_UID`. Lines that share a bundle and an add-to-cart id are one bundle; two adds of the same bundle are two bundles.
-- The function checks the bundle's offers against those lines, using the bundle's current settings, and applies the matching tier's rewards.
-- If a cart app or theme strips line-item properties, the items stay in the cart at **full price**.
-
-**Settings → Discount combinations** controls whether bundle discounts combine with other product, order, and shipping discounts. Discount codes and other apps' discounts are not shown in the widget, so the widget's total can differ from the checkout total.
-
-Only **Active** bundles get the discount. A bundle previewed with `?nameless_preview=true` adds at full price.
-
-To confirm: add a bundle from the widget, complete a test order, and check Shopify admin → **Orders**. Each bundle line should show `__FB_ATC_UID` and the discount. If the discount is missing, see [Troubleshooting](/troubleshooting).
+If the discount is missing, see [Troubleshooting](/troubleshooting#discount-missing-at-checkout).
 
 ## Subscriptions
 
-With **Let customers buy this bundle on a subscription** on, the widget offers each product's selling plans and adds each line with the plan the shopper picked. **Settings → Subscription discount** decides which payments get the bundle discount.
-
-While the bundle owns the theme's add-to-cart and sells subscriptions, Fast Bundle 2.0 hides the plan picker of supported subscription apps on the page, so shoppers see one choice.
+Each line is added with the selling plan the shopper picked. When the bundle owns the theme's button, supported subscription apps' plan pickers are hidden.
 
 ## Bundle as Product
 
-A bundle with **Bundle as Product** turned on has its own Shopify product and product page.
-
-- The product can't be bought alone: Shopify refuses it as a cart line. On its page, the bundle's add is the only way to buy. **Buy it now** is always hidden; with the widget's button, the theme's add-to-cart is hidden too; with the theme's button, it adds the bundle.
-- Everywhere else on the store — a collection page, a quick-add — an add of that product sends the shopper to its page instead.
-- On its page, no other bundle shows, and Fast Bundle 2.0 leaves Bundle as Product products out of other bundles' collections.
+- The product can't be bought alone. On its page, **Buy it now** is hidden; with the widget's button the theme's add-to-cart is hidden too, and with the theme's button it adds the bundle.
+- Elsewhere (collection pages, quick-add), adding the product sends the shopper to its page.
+- No other bundle shows on its page, and it is left out of other bundles' collections.

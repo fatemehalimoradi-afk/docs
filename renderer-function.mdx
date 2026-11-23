@@ -3,11 +3,9 @@ title: "Renderer function"
 description: "Register a renderer and paint the widget from the view"
 ---
 
-The bundle’s **JS code** registers one renderer. The host calls it with a **view** — everything the engine has already worked out — and the renderer turns that view into HTML. It computes nothing.
+The bundle's **JS code** registers one renderer, which turns the **view** into HTML and computes nothing.
 
 ## Register
-
-Call `defineRenderer` exactly once, at the top level of the script, with `{ viewVersion: 2 }` as the second argument:
 
 ```js
 window.nameless.defineRenderer(
@@ -18,95 +16,67 @@ window.nameless.defineRenderer(
 );
 ```
 
-| Rule | Why |
-| --- | --- |
-| Pass `{ viewVersion: 2 }` exactly | It is required. Without it the script is never run: the host logs `RENDERER_VIEW_VERSION_MISSING` and leaves the theme's page as it was |
-| Call it at the top level, unguarded | Registration is matched to the loading bundle through `document.currentScript`. A call deferred into `DOMContentLoaded`, `setTimeout`, a promise, or any other callback registers against nothing |
-| Call it once | One script registers one renderer |
-
-The renderer is registered under the file URL the bundle names, so two bundles that point at the same file share one download. A bundle with no JS code is not drawn; the theme's page stays as it is.
+- Pass `{ viewVersion: 2 }` exactly, or the renderer never runs (`RENDERER_VIEW_VERSION_MISSING`).
+- Call it once, at the top level — never inside `DOMContentLoaded`, `setTimeout`, a promise, or any callback.
 
 ## The context object
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `view` | `RendererView` | Read-only. Everything you draw from. See [Renderer view](/renderer-view) |
-| `container` | `HTMLElement` | The mount. Already carries `data-nameless-widget="{bundleId}"` |
+| `view` | `RendererView` | Read-only. See [Renderer view](/renderer-view) |
+| `container` | `HTMLElement` | The mount. Carries `data-nameless-widget="{bundleId}"` |
 | `paint` | `(html: string) => void` | Draws your markup into `container` |
-| `locale` | `string` | Canonical BCP-47 tag (`"en"`, `"pt-BR"`). Never null |
+| `locale` | `string` | BCP-47 tag (`"en"`, `"pt-BR"`). Never null |
 | `primaryLocale` | `string` | The shop's default language; falls back to `locale` |
-| `t` | `(source, vars?) => string` | Translates the copy you write |
+| `t` | `(source, vars?) => string` | Translates your copy |
 | `productUrl` | `(handle) => string \| null` | A product's page in the page's language; `null` where the surface has none |
 | `collectionUrl` | `(handle) => string \| null` | The same for a collection |
-| `bundlePageUrl` | `string \| null` | The bundle's own page, when a bundle-type widget's settings ask for it. Always `null` for a custom renderer |
-| `params`, `styleVars`, `customCss`, `widgetCopy` | | Used by the built-in bundle-type widgets. A custom renderer can ignore them |
-
-There is no `dispatch` and no engine state in the context: no conditions, no reward rules, no percentages to read. Don't look for them.
-
-`locale` is the shopper's language on a Shopify theme, the embed's language on a headless surface, and the admin's language in the admin preview. Every price in the view is already formatted for it.
+| `bundlePageUrl` | `string \| null` | Always `null` for a custom renderer |
+| `params`, `styleVars`, `customCss`, `widgetCopy` | | For built-in bundle-type widgets; ignore them |
 
 ## Paint
 
-Build the whole markup from `ctx.view`, then call `ctx.paint(html)` once.
+The renderer runs on mount and after every change. Each time, build the whole markup from `ctx.view` and call `ctx.paint(html)` once.
 
-The renderer runs **many times** — on mount, and after every change to quantity, variant, option, tier, or the cart request. Each call must rebuild everything from the view. Never keep state or DOM nodes between calls.
-
-`paint` morphs your markup into the container rather than replacing it:
-
-- An element with the same `id` stays the same node.
-- A `<details>` the shopper opened stays open.
-- The control the shopper is typing in keeps its value and focus.
-
-So give every repeated element an `id` built from `view.bundleId` and its own id:
+`paint` keeps elements with the same `id` as the same node, preserving open `<details>`, typed values, and focus. Give every repeated element an `id` built from `view.bundleId` and its own id:
 
 ```js
 '<li id="nb-' + esc(v.bundleId) + "-row-" + esc(sel.id) + "-" + esc(product.id) + '">'
 '<button id="nb-' + esc(v.bundleId) + "-tier-" + esc(tier.id) + '" …>'
 ```
 
-An element under a new `id` is drawn exactly as written — that is how you open a `<details>` from the view.
-
-`ctx.container.innerHTML = …` also works, but it drops focus, typing, and open panels on every call.
-
-The runtime's listeners live on the container itself, so they survive every repaint. You never wire events — see [Data attributes](/data-attributes).
+An element under a new `id` is drawn exactly as written.
 
 ## Translate your copy
 
-`ctx.t` uses the English source string as the key. There are no key names to invent:
+`ctx.t` uses the English source string as the key:
 
 ```js
 ctx.t("Add to cart");
 ctx.t("Add {{count}} more", { count: 2 });
 ```
 
-It resolves the shopper's language, then the shop's default language, then the literal you wrote. A missing translation shows your literal, never a key or a blank. It never throws.
+It falls back to the shop's default language, then your literal, and never throws.
 
-- Wrap every word you write in `ctx.t`. An unwrapped literal cannot be translated until the renderer is rewritten.
-- Text that comes from the view — product, variant, and collection titles, `Money.text` — is already the merchant's. Escape it instead.
-- Keep existing `ctx.t` literals byte-for-byte. The literal is the key to the merchant's stored translations; rewording it orphans every language's wording for that string. Change the markup around a literal, not the literal.
-- Translate whole phrases with `{{vars}}`. Never concatenate translated fragments — word order differs by language.
-- Don't fix widths for labels or buttons. Translated text runs up to 50% longer.
-- Write the bundle's title (and a subtitle, if your design has one) as your own `ctx.t` copy. `view.title` is not for drawing.
+- Wrap every word you write in `ctx.t`. View text (titles, `Money.text`) is the merchant's: escape it instead.
+- Keep existing `ctx.t` literals byte-for-byte; the literal is the key to the merchant's stored translations.
+- Translate whole phrases with `{{vars}}`; never concatenate translated fragments.
+- Don't fix widths for labels or buttons; translations run up to 50% longer.
+- Write the bundle's title (and any subtitle) with `ctx.t`. `view.title` is not for drawing.
 
 ## Hard rules
 
-| Rule | Why |
-| --- | --- |
-| No `addEventListener`, no inline `on*=""` | The runtime owns interactivity |
-| No `window.nameless.dispatch(...)`, no cart or Ajax calls | State changes come from the [attribute contract](/data-attributes) |
-| No `fetch` / `XMLHttpRequest` | Everything you may draw is already in the view |
-| No globals, no `localStorage`, no timers that change state | The renderer is a pure function of the view |
-| Never cache DOM nodes between calls | Each call rebuilds the markup |
-| No arithmetic on money | Print `Money.text`. `Money.amount` exists only to compare two amounts |
-| No counting | Unit counts are `view.summary.unitCount` and `selector.summary.unitCount` |
-| No eligibility logic | Whether a tier applies, what it saves, and what is missing are all in `view.tiers` |
-| Escape every view string | Product titles are merchant input |
-
-Escape every string from the view with an `esc()` helper like the one in the [minimal example](#minimal-example). Never escape `ctx.t` output: it escapes itself and its variables, and escaping twice shows shoppers `&amp;quot;`.
+- No `addEventListener` or inline `on*=""` handlers; use [data attributes](/data-attributes).
+- No `window.nameless.dispatch(...)`, cart or Ajax calls, `fetch`, or `XMLHttpRequest`.
+- No globals, `localStorage`, or timers that change state. Never cache DOM nodes between calls.
+- No money arithmetic: print `Money.text`; use `Money.amount` only to compare.
+- No counting: use `view.summary.unitCount` and `selector.summary.unitCount`.
+- No eligibility logic: tier facts are in `view.tiers`.
+- Escape every view string with an `esc()` helper like the one in the [minimal example](#minimal-example). Never escape `ctx.t` output; it escapes itself and its variables.
 
 ## Minimal example
 
-One row per product selector, a total, and an add-to-cart button. Collection rows and tier cards are on [Renderer view](/renderer-view#examples).
+One row per product selector, a total, and an add-to-cart button. Tier cards are on [Renderer view](/renderer-view#examples).
 
 ```js
 window.nameless.defineRenderer(
@@ -200,35 +170,31 @@ window.nameless.defineRenderer(
 
 ## Add-to-cart button
 
-`view.addToCart` drives the button:
+Draw one `<button data-nameless-atc="{view.bundleId}">` from `view.addToCart`:
 
 | Field | What to do |
 | --- | --- |
-| `themeButtonAdds` | `true`: the theme's own button adds the bundle. Draw **no** button. The host also removes any stray `[data-nameless-atc]` |
-| `enabled` | `false` until something is picked, no pick is sold out, and no row waits for a pick. Disable the button, or keep it pressable and point out what is missing once `pressed` is true |
-| `pressed` | The shopper pressed at least once. From then on, name each `pickNeeded` row and each sold-out selection |
-| `adding` | The cart request is in flight. Draw the button with `aria-busy="true" aria-disabled="true"` and a spinner or `ctx.t("Adding to cart…")`, keeping its size. The runtime ignores clicks meanwhile |
-| `error` | The last press added nothing. Say why near the button: `pickNeeded` → ask for the missing picks (this also covers an offer-wide condition that isn't met yet; the affected rows have `pickNeeded`); `soldOut` → part of the bundle is sold out; `refused` → print `error.message` (the cart's own sentence, already in the shopper's language) when it is not null, else a general message |
+| `themeButtonAdds` | `true`: the theme's button adds the bundle. Draw **no** button; the host removes any stray `[data-nameless-atc]` |
+| `enabled` | `false` until something is picked, nothing is sold out, and no row awaits a pick. Disable the button, or keep it pressable and point out what's missing once `pressed` |
+| `pressed` | From then on, name each `pickNeeded` row and sold-out selection |
+| `adding` | Request in flight (clicks ignored). Add `aria-busy="true" aria-disabled="true"` and a spinner or `ctx.t("Adding to cart…")`, keeping the button's size |
+| `error` | The last press added nothing; say why near the button. `pickNeeded`: ask for the missing picks. `soldOut`: part is sold out. `refused`: print `error.message` (already translated) if not null, else a general message |
 
-The widget is redrawn on every change, so anything the runtime might write into the button would be lost. Draw the busy and error states yourself from the view — the runtime writes nothing on failure.
-
-`themeButtonAdds` is `true` only when the bundle's add-to-cart method is the theme button and the widget sits inline on the product page. It is `false` in a popup, in a full-width display on the bundle's own page, and on every bundle when the store is set to ignore the theme's add-to-cart button. Trust the flag; there's no case to special-case. See [Shopify integration](/shopify-integration#add-to-cart-method).
+Draw busy and error states yourself; the runtime writes nothing into the button. `themeButtonAdds` is `true` only when the add-to-cart method is the theme button and the widget sits inline on the product page; trust the flag. See [Shopify integration](/shopify-integration#add-to-cart-method).
 
 ## When things go wrong
 
-The host logs structured codes prefixed with `[FastBundle]`:
+The host logs these codes prefixed with `[FastBundle]`:
 
 | Code | Meaning | Effect |
 | --- | --- | --- |
 | `RENDERER_THREW` | Your callback threw | Theme elements the bundle hid come back; the container keeps its last paint |
-| `RENDERER_LOAD_ERROR` | The CSS fetch or the JS `<script>` failed | The widget does not render for that bundle |
-| `RENDERER_VIEW_VERSION_MISSING` | `defineRenderer` was called without `viewVersion`, or never called | The widget is not run; the theme's page is shown |
-| `RENDERER_VIEW_UNSUPPORTED` | `defineRenderer` was called with a `viewVersion` the host doesn't build | The widget is not run; the theme's page is shown |
-| `RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` mount for this bundle on the page | The renderer is never called |
-| `RENDERER_MISSING` | The bundle names no JS file | The widget is not drawn; the theme's page is shown |
-| `RENDERER_EMPTY` | A bundle-type widget drew nothing (custom renderers don't get this code) | The theme's page is shown |
-| `VIEW_BUILD_FAILED` | The view couldn't be built for this bundle | The widget is not drawn; the theme's page is shown. Contact support |
+| `RENDERER_LOAD_ERROR` | The CSS or JS failed to load | Not rendered |
+| `RENDERER_VIEW_VERSION_MISSING` | `defineRenderer` called without `viewVersion`, or never called | Theme's page shown |
+| `RENDERER_VIEW_UNSUPPORTED` | `viewVersion` the host doesn't build | Theme's page shown |
+| `RENDERER_MOUNT_NOT_FOUND` | No `[data-nameless-block]` mount for this bundle | Renderer never called |
+| `RENDERER_MISSING` | The bundle names no JS file | Theme's page shown |
+| `RENDERER_EMPTY` | A bundle-type widget drew nothing (not for custom renderers) | Theme's page shown |
+| `VIEW_BUILD_FAILED` | The view couldn't be built | Theme's page shown. Contact support |
 
-If the CSS fails, the JS is not run, so treat both assets as required. Stay defensive anyway: guard against empty `selectors`, empty `products`, empty `selections`, `null` images, and `null` money. Write semantic, labelled markup so the widget still works if styling fails.
-
-Next: the [view](/renderer-view) you draw from, and the [data attributes](/data-attributes) the runtime wires after each paint.
+If the CSS fails, the JS isn't run. Guard against empty `selectors`, `products`, and `selections`, and `null` images and money.
